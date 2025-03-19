@@ -1,7 +1,7 @@
 async function myInitSqlJs() {
     let db;
     try {
-        const response = await fetch('https://unexes-my.sharepoint.com/:u:/g/personal/rre_unex_es/EcHLORPlRvpEusbdN9rUMFwBF4f5KTLIyEu8yER9QPhFYw?raw=1'); // Replace with your remote database URL
+        const response = await fetch('dbs/empresasimple.db'); // Replace with your remote database URL
         const buffer = await response.arrayBuffer();
         const SQL = await initSqlJs({
             locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/${file}`
