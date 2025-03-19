@@ -13,14 +13,62 @@ body {
     line-height: 1.6;
     background-color: #f4f4f4;
     color: #333;
-     /* Add horizontal padding */
-     padding-left: 40px;
-     padding-right: 40px;
+    margin: 0;
+    padding: 0;
+}
+
+.toolbar {
+    background-color: #fff;
+    padding: 10px 40px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.toolbar h1 {
+    margin: 0;
+    font-size: 1.8em;
+}
+
+.toolbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Add select styling */
+#dbSelect {
+    padding: 10px 15px;
+    border: 1px solid #007BFF;
+    border-radius: 4px;
+    font-size: 1em;
+    color: #333;
+    background-color: #fff;
+    cursor: pointer;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#dbSelect:hover {
+    border-color: #0056b3;
+}
+
+#dbSelect:focus {
+    outline: none;
+    border-color: #0056b3;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.main-content {
+    padding: 20px 40px;
 }
 
 .container {
     max-width: 960px;
-    margin: 20px auto;
+    margin: 0 auto;
     padding: 20px;
     background-color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

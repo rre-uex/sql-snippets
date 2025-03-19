@@ -12,19 +12,26 @@
     
 </head>
 <body>
-    <h1>SQL Practice</h1>
-    <label for="dbSelect">Select Database:</label>
-    <select id="dbSelect">
-        <option value="db/empresasimple.db">Empresa</option>
-        <option value="db/superheroe.db" selected>Superheroes</option>
-        <option value="db/dgt.db">DGT</option>
-        <option value="db/penguins.db">Penguins</option>
-        </select>
-    <p>Practice your SQL skills here.</p>
-    <textarea id="sqlEditor"></textarea>
-    <button id="runButton">Run SQL</button>
-    <button id="submitButton" disabled>Submit</button>
-    <div id="results"></div>
+    <div class="toolbar">
+        <h1>SQL Snippets</h1>
+        <div class="toolbar-controls">
+            <label for="dbSelect">Database:</label>
+            <select id="dbSelect">
+                <option value="db/empresa.db">Empresa</option>
+                <option value="db/superheroe.db" selected>Superheroes</option>
+                <option value="db/dgt.db">DGT</option>
+                <option value="db/penguins.db">Penguins</option>
+            </select>
+            <button id="runButton">Run SQL</button>
+            <button id="submitButton" disabled>Submit</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <p>Practice your SQL skills here.</p>
+        <textarea id="sqlEditor"></textarea>
+        <div id="results"></div>
+    </div>
 
     <dialog id="warningDialog">
         <h2>Database Load Warning</h2>
