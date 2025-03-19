@@ -35,9 +35,12 @@ async function myInitSqlJs(dbFile) {
         //Display tables in the results div
         //const tableListHTML = tableNames.map(name => `<li>${name}</li>`).join('');
         //document.getElementById("results").innerHTML = `<ul>${tableListHTML}</ul>`;
-        document.getElementById("sqlEditor").value = "-- Run this query to get database schema\nSELECT * FROM sqlite_master;";
+
 
     }
+
+    document.getElementById("sqlEditor").value = "-- Run this query to get the database schema\nselect * from sqlite_master where type='table';";
+
     return db;
 }
 
