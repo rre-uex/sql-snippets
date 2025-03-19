@@ -59,9 +59,11 @@ async function main() {
 
     const dbSelect = document.getElementById("dbSelect");
     let db = await myInitSqlJs(dbSelect.value); // Initial load
+    createSchema(db);
 
     dbSelect.addEventListener("change", async () => {
         db = await myInitSqlJs(dbSelect.value); // Reload on change
+        createSchema(db);
     });
 
     const editor = CodeMirror.fromTextArea(document.getElementById("sqlEditor"), {
