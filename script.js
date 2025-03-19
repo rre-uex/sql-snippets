@@ -1,12 +1,21 @@
-async function myInitSqlJs() {
+async function myInitSqlJs(dbFile) {
     let db;
     try {
-        const response = await fetch('db/empresasimple.db'); // Replace with your remote database URL
+        const response = await fetch(dbFile); // Use selected dbFile
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const buffer = await response.arrayBuffer();
         const SQL = await initSqlJs({
             locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/${file}`
         });
-        db = new SQL.Database(new Uint8Array(buffer));
+        try {
+            db = new SQL.Database(new Uint8Array(buffer));
+        } catch (sqlError) {
+            // Catch sql.js specific errors, including "file is not a database"
+            console.error("sql.js error:", sqlError);
+            throw new Error("Error loading database: " + sqlError.message);
+        }
     } catch (remoteError) {
         console.warn("Failed to load remote database:", remoteError);
         const SQL = await initSqlJs({
@@ -33,14 +42,19 @@ async function myInitSqlJs() {
 }
 
 async function main() {
-    const db = await myInitSqlJs();
+    const dbSelect = document.getElementById("dbSelect");
+    let db = await myInitSqlJs(dbSelect.value); // Initial load
+
+    dbSelect.addEventListener("change", async () => {
+        db = await myInitSqlJs(dbSelect.value); // Reload on change
+    });
 
     const editor = CodeMirror.fromTextArea(document.getElementById("sqlEditor"), {
         mode: "text/x-sql",
         indentWithTabs: true,
         smartIndent: true,
         lineNumbers: true,
-        matchBrackets : true,
+        matchBrackets: true,
         autofocus: true
     });
 
