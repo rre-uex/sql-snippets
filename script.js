@@ -45,8 +45,18 @@ async function myInitSqlJs(dbFile) {
 }
 
 async function main() {
+    
     const submitButton = document.getElementById("submitButton");
     submitButton.disabled = true;
+
+    // Accessing the element in the host page
+    const hostElement = window.parent.document.getElementById("id_answer");
+    if (hostElement){
+        hostElement.setAttribute("value", "GotYa!");
+        console.log("Host Element id_answer found!");
+    }
+    else console.log("No access to host element");
+
     const dbSelect = document.getElementById("dbSelect");
     let db = await myInitSqlJs(dbSelect.value); // Initial load
 
