@@ -42,6 +42,8 @@ async function myInitSqlJs(dbFile) {
 }
 
 async function main() {
+    const submitButton = document.getElementById("submitButton");
+    submitButton.disabled = true;
     const dbSelect = document.getElementById("dbSelect");
     let db = await myInitSqlJs(dbSelect.value); // Initial load
 
@@ -63,6 +65,12 @@ async function main() {
         try {
             const results = db.exec(sql);
             displayResults(results);
+            const submitButton = document.getElementById("submitButton");
+            if (results.length > 0 && results[0].values.length > 0) {
+                submitButton.disabled = false;
+            } else {
+                submitButton.disabled = true;
+            }
         } catch (error) {
             // Improved error handling
             const errorMessage = error.message;
@@ -115,4 +123,28 @@ main();
 
 document.getElementById("closeDialog").addEventListener("click", () => {
     document.getElementById("warningDialog").close();
+});
+
+// Event listener for the Submit button
+document.getElementById("submitButton").addEventListener("click", () => {
+    const resultsDiv = document.getElementById("results");
+    if (resultsDiv.firstChild && resultsDiv.firstChild.tagName === 'TABLE') {
+        const table = resultsDiv.querySelector('table');
+        let tableString = "";
+        if (table) {
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('th, td');
+                cells.forEach(cell => {
+                    tableString += cell.textContent + " ";
+                });
+                tableString += "\n";
+            });
+        }
+        const hash = CryptoJS.MD5(tableString.trim()).toString(); // Calculate MD5 hash
+        console.log("MD5 Hash of Results:", hash); // Log the hash
+        console.log(tableString.trim()); // Log the hash
+    } else {
+        console.log("No table results to submit.");
+    }
 });

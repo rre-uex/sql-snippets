@@ -4,6 +4,8 @@
     <title>SQL Practice</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/sql-wasm.min.js" integrity="sha512-KMs6GZJsWI3DXBlu2QMbVdaHJbFrzVDYeccH/Ipuvtg3IOHnABXwUZbIhr5ybFSNYL6Bde1dCQ37xtszsBZcSg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -13,13 +15,15 @@
     <h1>SQL Practice</h1>
     <label for="dbSelect">Select Database:</label>
     <select id="dbSelect">
-        <option value="db/empresasimple.db">Empresa Simple</option>
-        <option value="db/superhero.db" selected>Superhero</option>
-        <option value="your_database2.sqlite">Your Database 2</option>
+        <option value="db/empresasimple.db">Empresa</option>
+        <option value="db/superheroe.db" selected>Superheroes</option>
+        <option value="db/dgt.db">DGT</option>
+        <option value="db/penguins.db">Penguins</option>
         </select>
     <p>Practice your SQL skills here.</p>
     <textarea id="sqlEditor"></textarea>
     <button id="runButton">Run SQL</button>
+    <button id="submitButton" disabled>Submit</button>
     <div id="results"></div>
 
     <dialog id="warningDialog">
