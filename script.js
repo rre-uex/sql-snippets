@@ -60,14 +60,6 @@ async function main() {
         autofocus: true
     });
 
-    // Accessing the element in the host page
-    const hostElement = window.parent.document.getElementById("id_answer");
-    if (hostElement){
-        hostElement.setAttribute("value", "GotYa!");
-        console.log("Host Element id_answer found!");
-    }
-    else console.log("No access to host element");
-
     // dropdown list for selecting database
     const dbSelect = document.getElementById("dbSelect");
     let db = await myInitSqlJs(dbSelect.value); // Initial load
@@ -171,6 +163,7 @@ document.getElementById("submitButton").addEventListener("click", () => {
         const hash = CryptoJS.MD5(tableString.trim()).toString(); // Calculate MD5 hash
         console.log("MD5 Hash of Results:", hash); // Log the hash
         console.log(tableString.trim()); // Log the hash
+        window.parent.postMessage(hash, 'https://campusvirtual.unex.es'); //Send MD5 hash to parent window
     } else {
         console.log("No table results to submit.");
     }
