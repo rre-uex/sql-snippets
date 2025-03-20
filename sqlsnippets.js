@@ -20,7 +20,6 @@ window.addEventListener('message', function (event) {
         if (sql_submitButton) {
             sql_submitButton.hidden = true;
             sql_submitButton.click();
-            window.dispatchEvent(new Event('myCustomEvent'));
         } else {
             console.error("Submit button not found!");
         }
@@ -34,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function showAndHideSnippets() {
-    console.log("Running delayed function");
+    console.log("Running showAndhide function");
     const ok_flag = document.getElementById('id_answer');
     console.log("flag value: ", ok_flag);
     if (ok_flag) { //on question page

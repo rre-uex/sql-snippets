@@ -41,8 +41,6 @@ async function myInitSqlJs(dbFile) {
 
     }
 
-    document.getElementById("sqlEditor").value = "-- Run this query to get the database schema\nselect * from sqlite_master where type='table';";
-
     return db;
 }
 
