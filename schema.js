@@ -3,6 +3,9 @@ async function createSchema(db) {
     const query = `
     SELECT '
     digraph structs {
+        graph [fontname="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" fontsize=12 bgcolor="#f9f9f9"];
+        node [fontname="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" fontsize=12];
+        edge [fontname="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" fontsize=10 color="#007BFF"];
         '
         UNION ALL
         SELECT '
@@ -18,9 +21,9 @@ async function createSchema(db) {
         WHEN LAG(t.name, 1) OVER (ORDER BY t.name) = t.name THEN ''
         ELSE
                     t.name || ' [label=<
-                    <TABLE BORDER="0" CELLSPACING="0" CELLBORDER="1">
+                    <TABLE BORDER="0" CELLSPACING="0" CELLBORDER="1" COLOR="#007BFF" BGCOLOR="#f9f9f9">
                         <TR>
-                            <TD COLSPAN="2"><B>' || t.name || '</B></TD>
+                            <TD COLSPAN="3" BGCOLOR="#007BFF"><FONT COLOR="#f9f9f9"><B>' || t.name || '</B></FONT></TD>
                         </TR>
                     '
             END || '
@@ -28,7 +31,8 @@ async function createSchema(db) {
                             <TD PORT="' || i.name || '_to">' ||
                                 CASE i.pk WHEN 0 THEN '&nbsp;' ELSE '&#128273; ' END ||
                             '</TD>
-                            <TD PORT="' || i.name || '_from">' || i.name || '</TD>
+                            <TD PORT="' || i.name || '_type"><FONT COLOR="#555555">' || i.type || '</FONT></TD>
+                            <TD PORT="' || i.name || '_from"><FONT COLOR="#333333">' || i.name || '</FONT></TD>
                         </TR>
                     ' ||
             CASE
@@ -60,6 +64,7 @@ async function createSchema(db) {
         const svg = viz.renderSVGElement(graphviz);
         svg.style.margin = "0 auto";
         svg.style.display = "block";
+        svg.style.backgroundColor = "#f9f9f9";
         graphDiv.appendChild(svg);
     });
 }

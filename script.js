@@ -22,8 +22,10 @@ async function myInitSqlJs(dbFile) {
             locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/${file}`
         });
         db = new SQL.Database();
-        db.run("CREATE TABLE students (id INTEGER, name TEXT, grade INTEGER);");
-        db.run("INSERT INTO students VALUES (1, 'Alice', 90), (2, 'Bob', 85), (3, 'Charlie', 95);");
+        db.run("CREATE TABLE students (id INTEGER primary key, name TEXT, grade INTEGER, country integer not null, foreign key (country) references countries(id));");
+        db.run("CREATE TABLE countries (id INTEGER primary key, name TEXT);");
+        db.run("INSERT INTO countries VALUES (1, 'USA'), (2, 'UK'), (3, 'Italy');");
+        db.run("INSERT INTO students VALUES (1, 'Alice', 90, 1), (2, 'Bob', 85, 2), (3, 'Charlie', 95, 3);");        
 
         // Show warning dialog using alert()
         const tableNames = db.exec("SELECT name FROM sqlite_master WHERE type='table';")[0].values.map(row => row[0]);
@@ -49,6 +51,15 @@ async function main() {
     const submitButton = document.getElementById("submitButton");
     submitButton.disabled = true;
 
+    const editor = CodeMirror.fromTextArea(document.getElementById("sqlEditor"), {
+        mode: "text/x-sql",
+        indentWithTabs: true,
+        smartIndent: true,
+        lineNumbers: true,
+        matchBrackets: true,
+        autofocus: true
+    });
+
     // Accessing the element in the host page
     const hostElement = window.parent.document.getElementById("id_answer");
     if (hostElement){
@@ -57,6 +68,7 @@ async function main() {
     }
     else console.log("No access to host element");
 
+    // dropdown list for selecting database
     const dbSelect = document.getElementById("dbSelect");
     let db = await myInitSqlJs(dbSelect.value); // Initial load
     createSchema(db);
@@ -64,15 +76,6 @@ async function main() {
     dbSelect.addEventListener("change", async () => {
         db = await myInitSqlJs(dbSelect.value); // Reload on change
         createSchema(db);
-    });
-
-    const editor = CodeMirror.fromTextArea(document.getElementById("sqlEditor"), {
-        mode: "text/x-sql",
-        indentWithTabs: true,
-        smartIndent: true,
-        lineNumbers: true,
-        matchBrackets: true,
-        autofocus: true
     });
 
     document.getElementById("runButton").addEventListener("click", () => {
@@ -132,6 +135,15 @@ async function main() {
 
         resultsDiv.appendChild(table);
     }
+
+    // Add graph toggle functionality
+    const toggleButton = document.getElementById("toggleGraph");
+    const graphElement = document.getElementById("graph");
+    
+    toggleButton.addEventListener("click", () => {
+        graphElement.classList.toggle("hidden");
+        toggleButton.textContent = graphElement.classList.contains("hidden") ? "Show Diagram" : "Hide Diagram";
+    });
 }
 
 main();
