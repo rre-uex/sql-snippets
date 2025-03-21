@@ -58,6 +58,24 @@ function showAndHideSnippets() {
         if (sql_submitButton) {
             sql_submitButton.hidden = true;
         }
+    }  
+    else { //WARNING: not only response page
+        //removing MD5 response in response page
+        changeDivContentByMD5('text_to_html', '');
+        console.log('removing response')
     }
 }
+
+function changeDivContentByMD5(className, newInnerHTML) {
+    let divElements = document.querySelectorAll('.' + className);
+    const md5Regex = /^[a-f0-9]{32}$/; // Regular expression for MD5 hash
+  
+    for (let i = 0; i < divElements.length; i++) {
+      if (md5Regex.test(divElements[i].innerHTML)) {
+        divElements[i].innerHTML = newInnerHTML;
+        return; // Stop after finding and updating the first matching div
+      }
+    }
+    console.log("Div with response not found.");
+  }
 
