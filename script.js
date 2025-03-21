@@ -45,6 +45,18 @@ async function myInitSqlJs(dbFile) {
 }
 
 async function main() {
+    // Add cookie functions at the start of main
+    const getCookie = name => {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+    };
+
+    const setCookie = (name, value) => {
+        const encodedValue = encodeURIComponent(value);
+        document.cookie = `${name}=${encodedValue};path=/;max-age=2592000`; // 30 days
+    };
+
     const urlParams = new URLSearchParams(window.location.search);
     const dbParam = urlParams.get('db');
     console.log("database:", dbParam);
@@ -60,6 +72,12 @@ async function main() {
         matchBrackets: true,
         autofocus: true
     });
+
+    // Load last query if exists
+    const lastQuery = getCookie('lastQuery');
+    if (lastQuery) {
+        editor.setValue(lastQuery);
+    }
 
     // dropdown list for selecting database
     const dbSelect = document.getElementById("dbSelect");
@@ -150,35 +168,43 @@ async function main() {
         graphElement.classList.toggle("hidden");
         toggleButton.textContent = graphElement.classList.contains("hidden") ? "Show Diagram" : "Hide Diagram";
     });
+
+    document.getElementById("closeDialog").addEventListener("click", () => {
+        document.getElementById("warningDialog").close();
+    });
+    
+    // Event listener for the Submit button
+    document.getElementById("submitButton").addEventListener("click", () => {
+
+        // Save current query to cookie
+        const currentQuery = editor.getValue();
+        setCookie('lastQuery', currentQuery);
+
+        const resultsDiv = document.getElementById("results");
+        if (resultsDiv.firstChild && resultsDiv.firstChild.tagName === 'TABLE') {
+           
+    
+            const table = resultsDiv.querySelector('table');
+            let tableString = "";
+            if (table) {
+                const rows = table.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const cells = row.querySelectorAll('th, td');
+                    cells.forEach(cell => {
+                        tableString += cell.textContent + " ";
+                    });
+                    tableString += "\n";
+                });
+            }
+            const hash = CryptoJS.MD5(tableString.trim()).toString(); // Calculate MD5 hash
+            console.log("MD5 Hash of Results:", hash); // Log the hash
+            console.log(tableString.trim()); // Log the hash
+            window.parent.postMessage(hash, 'https://campusvirtual.unex.es'); //Send MD5 hash to parent window
+        } else {
+            console.log("No table results to submit.");
+        }
+    });
 }
 
 main();
 
-document.getElementById("closeDialog").addEventListener("click", () => {
-    document.getElementById("warningDialog").close();
-});
-
-// Event listener for the Submit button
-document.getElementById("submitButton").addEventListener("click", () => {
-    const resultsDiv = document.getElementById("results");
-    if (resultsDiv.firstChild && resultsDiv.firstChild.tagName === 'TABLE') {
-        const table = resultsDiv.querySelector('table');
-        let tableString = "";
-        if (table) {
-            const rows = table.querySelectorAll('tr');
-            rows.forEach(row => {
-                const cells = row.querySelectorAll('th, td');
-                cells.forEach(cell => {
-                    tableString += cell.textContent + " ";
-                });
-                tableString += "\n";
-            });
-        }
-        const hash = CryptoJS.MD5(tableString.trim()).toString(); // Calculate MD5 hash
-        console.log("MD5 Hash of Results:", hash); // Log the hash
-        console.log(tableString.trim()); // Log the hash
-        window.parent.postMessage(hash, 'https://campusvirtual.unex.es'); //Send MD5 hash to parent window
-    } else {
-        console.log("No table results to submit.");
-    }
-});
