@@ -22,30 +22,37 @@ window.addEventListener('message', function (event) {
     if (event.source === iframe.contentWindow) {
         console.log('Parent received message:', event.data);
 
-        //set the value of the answer input
-        const sql_answer = this.document.getElementById('id_answer');
-        if (sql_answer) {
-            sql_answer.hidden = true;
-            sql_answer.value = event.data;
-        }
+        if (event.data.type === 'md5') { // md5 received
+            //set the value of the answer input
+            const sql_answer = this.document.getElementById('id_answer');
+            if (sql_answer) {
+                sql_answer.hidden = true;
+                sql_answer.value = event.data;
+            }
 
-        //submit answer        
-        const sql_submitButton = document.getElementById('id_submitbutton');
-        if (sql_submitButton) {
-            sql_submitButton.hidden = true;
-            sql_submitButton.click();
-        } else {
-            console.error("Submit button not found!");
+            //submit answer        
+            const sql_submitButton = document.getElementById('id_submitbutton');
+            if (sql_submitButton) {
+                sql_submitButton.hidden = true;
+                sql_submitButton.click();
+            } else {
+                console.error("Submit button not found!");
+            }
+
+        }
+        else if (event.data.type === 'ping') { // reply to ping from iframe
+            console.log('Sending message to iframe to show submit button');
+            iframe.contentWindow.postMessage('false', '*');
         }
     }
 });
 
-//Load and show the iframe only when question page (not response page)
+
 document.addEventListener('DOMContentLoaded', function () {
-    // Your function code here
     showAndHideSnippets();
 });
 
+//Load and show the iframe only when question page (not response page)
 function showAndHideSnippets() {
     console.log("Running showAndhide function");
     const ok_flag = document.getElementById('id_answer');

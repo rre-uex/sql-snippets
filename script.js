@@ -45,6 +45,25 @@ async function myInitSqlJs(dbFile) {
 }
 
 async function main() {
+
+    //Get the message from iframe document
+    window.addEventListener('message', function (event) {
+        console.log('Message received: ', event.data);
+        // Very important: check the origin of the message in production!
+        if (event.origin !== 'https://campusvirtual.unex.es') return;
+
+        if (event.source === this.window.parent) {
+            console.log('Parent received message:', event.data);
+
+            const submitBt = document.getElementById("submitButton");
+            submitBt.hidden = false;//event.data;
+        }
+    });
+
+    //ping the window.parent in case loaded in a iframe    
+    const message = { type: 'ping' };
+    window.parent.postMessage(message, '*');
+
     // Add cookie functions at the start of main
     const getCookie = name => {
         const value = `; ${document.cookie}`;
@@ -199,7 +218,8 @@ async function main() {
             const hash = CryptoJS.MD5(tableString.trim()).toString(); // Calculate MD5 hash
             console.log("MD5 Hash of Results:", hash); // Log the hash
             console.log(tableString.trim()); // Log the hash
-            window.parent.postMessage(hash, 'https://campusvirtual.unex.es'); //Send MD5 hash to parent window
+            const message = { type: 'md5', hash: hash };
+            window.parent.postMessage(message, 'https://campusvirtual.unex.es'); //Send MD5 hash to parent window
         } else {
             console.log("No table results to submit.");
         }
