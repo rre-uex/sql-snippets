@@ -45,6 +45,9 @@ async function myInitSqlJs(dbFile) {
 }
 
 async function main() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const dbParam = urlParams.get('db');
+    console.log("database:", dbParam);
     
     const submitButton = document.getElementById("submitButton");
     submitButton.disabled = true;
@@ -60,6 +63,19 @@ async function main() {
 
     // dropdown list for selecting database
     const dbSelect = document.getElementById("dbSelect");
+    
+    // Set the selected database if specified in URL
+    if (dbParam) {
+        // This will work because we use includes() to find partial matches
+        // For example: if dbParam is 'empresa' it will match 'db/empresa.db'
+        const matchingOption = Array.from(dbSelect.options).find(option => 
+            option.value.toLowerCase().includes(dbParam.toLowerCase())
+        );
+        if (matchingOption) {
+            dbSelect.value = matchingOption.value;
+        }
+    }
+    
     let db = await myInitSqlJs(dbSelect.value); // Initial load
     createSchema(db);
 

@@ -1,3 +1,17 @@
+/*
+This html should be included in the question page of moodle. 
+
+<div>
+<p>Enunciado del ejercicio:</p>
+<iframe id="snippets" src="" width="100%" height="600" hidden></iframe>
+<script>const database = "penguins";</script>
+<script src="https://i3lab.unex.es/sql-snippets/sqlsnippets.js">
+</script>
+</div>
+
+*/
+
+
 const iframe = document.getElementById('snippets');
 
 //Get the message from iframe document
@@ -38,7 +52,7 @@ function showAndHideSnippets() {
     console.log("flag value: ", ok_flag);
     if (ok_flag) { //on question page
         const snippets_frame = document.getElementById('snippets');
-        snippets_frame.src = "https://i3lab.unex.es/sql-snippets/index.html";
+        snippets_frame.src = "https://i3lab.unex.es/sql-snippets/index.html?db="+database;
         snippets_frame.hidden = false;
 
         //set the value of the answer input
