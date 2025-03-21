@@ -27,7 +27,7 @@ window.addEventListener('message', function (event) {
             const sql_answer = this.document.getElementById('id_answer');
             if (sql_answer) {
                 sql_answer.hidden = true;
-                sql_answer.value = event.data;
+                sql_answer.value = event.data.hash;;
             }
 
             //submit answer        
