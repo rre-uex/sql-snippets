@@ -3,7 +3,7 @@ async function createSchema(db) {
     const query = `
     SELECT '
     digraph structs {
-        graph [fontname="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" fontsize=12 bgcolor="#f9f9f9"];
+        graph [fontname="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" fontsize=12 bgcolor="#ffffff"];
         node [fontname="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" fontsize=12];
         edge [fontname="Segoe UI, Tahoma, Geneva, Verdana, sans-serif" fontsize=10 color="#007BFF"];
         '
@@ -21,7 +21,7 @@ async function createSchema(db) {
         WHEN LAG(t.name, 1) OVER (ORDER BY t.name) = t.name THEN ''
         ELSE
                     t.name || ' [label=<
-                    <TABLE BORDER="0" CELLSPACING="0" CELLBORDER="1" COLOR="#007BFF" BGCOLOR="#f9f9f9">
+                    <TABLE BORDER="0" CELLSPACING="0" CELLBORDER="1" COLOR="#007BFF" BGCOLOR="#ffffff">
                         <TR>
                             <TD COLSPAN="3" BGCOLOR="#007BFF"><FONT COLOR="#f9f9f9"><B>' || t.name || '</B></FONT></TD>
                         </TR>

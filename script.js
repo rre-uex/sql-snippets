@@ -45,16 +45,7 @@ async function myInitSqlJs(dbFile) {
 }
 
 async function main() {
-
-    // Add this near the beginning of the main function
-    // Initialize collapsible sections
-    document.querySelectorAll('.section-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const section = header.parentElement;
-            section.classList.toggle('collapsed');
-        });
-    });
-
+   
     //Get the message from iframe document
     window.addEventListener('message', function (event) {
         console.log('Message received: ', event.data);
@@ -72,6 +63,15 @@ async function main() {
     //ping the window.parent in case loaded in a iframe    
     const message = { type: 'ping' };
     window.parent.postMessage(message, '*');
+
+    // Add this near the beginning of the main function
+    // Initialize collapsible sections
+    document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.parentElement;
+            section.classList.toggle('collapsed');
+        });
+    });
 
     // Add cookie functions at the start of main
     const getCookie = name => {
