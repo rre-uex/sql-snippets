@@ -9,7 +9,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/sql-wasm.min.js" integrity="sha512-KMs6GZJsWI3DXBlu2QMbVdaHJbFrzVDYeccH/Ipuvtg3IOHnABXwUZbIhr5ybFSNYL6Bde1dCQ37xtszsBZcSg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad: false});</script>
 </head>
 <body>
     <div class="toolbar">
@@ -34,10 +35,13 @@
 
     <div class="main-content-editor">
         <textarea id="sqlEditor">-- Run this query to get the database schema&#10;select * from sqlite_master where type='table';</textarea>
+        
     </div>
 
+    
+
     <div class="main-content" style="display: none;">
-        <div class="collapsible-section collapsed">
+        <div class="collapsible-section ">
             <div class="section-header">
                 <span class="section-title">Database Diagram</span>
                 <span class="toggle-arrow">&#9660;</span>

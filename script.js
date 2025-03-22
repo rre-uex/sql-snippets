@@ -44,6 +44,7 @@ async function myInitSqlJs(dbFile) {
     return db;
 }
 
+
 async function main() {
    
     //Get the message from iframe document
@@ -123,11 +124,11 @@ async function main() {
     }
     
     let db = await myInitSqlJs(dbSelect.value); // Initial load
-    createSchema(db);
+    createSchemaMermaid(db);
 
     dbSelect.addEventListener("change", async () => {
         db = await myInitSqlJs(dbSelect.value); // Reload on change
-        createSchema(db);
+        createSchemaMermaid(db);
     });
 
     document.getElementById("runButton").addEventListener("click", () => {

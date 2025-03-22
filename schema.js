@@ -68,3 +68,71 @@ async function createSchema(db) {
         graphDiv.appendChild(svg);
     });
 }
+
+async function createSchemaMermaid(db) {
+    const query = `
+    WITH RECURSIVE
+    table_info AS (
+        SELECT 
+            m.name as table_name,
+            i.name as column_name,
+            i.type as column_type,
+            i.pk as is_primary_key,
+            i."notnull" as is_not_null
+        FROM sqlite_master m
+        JOIN pragma_table_info(m.name) i
+        WHERE m.type = 'table' AND m.name NOT LIKE 'sqlite_%'
+    ),
+    table_relations AS (
+        SELECT DISTINCT
+            table_name,
+            group_concat('    ' || column_type || ' ' || column_name || 
+                CASE 
+                    WHEN is_primary_key = 1 THEN ' PK'
+                    WHEN is_not_null = 1 THEN ' FK'
+                    ELSE ''
+                END, char(10)) as columns
+        FROM table_info
+        GROUP BY table_name
+    ),
+    fk_info AS (
+        SELECT 
+            m.name as table_name,
+            fk."from" as column_name,
+            fk."table" as referenced_table,
+            fk."to" as referenced_column
+        FROM sqlite_master m
+        JOIN pragma_foreign_key_list(m.name) fk
+        WHERE m.type = 'table' AND m.name NOT LIKE 'sqlite_%'
+    )
+    SELECT group_concat(
+        CASE 
+            WHEN section = 'header' THEN line
+            WHEN section = 'tables' THEN line || ' {' || char(10) || columns || '}'
+            WHEN section = 'relations' THEN line
+        END, 
+        char(10)
+    ) as diagram
+    FROM (
+        SELECT 'header' as section, 'erDiagram' as line, NULL as columns, 0 as ord
+        UNION ALL
+        SELECT 'tables', tr.table_name, tr.columns, 1
+        FROM table_relations tr
+        UNION ALL
+        SELECT 'relations', 
+               fk.table_name || ' ||--o{ ' || fk.referenced_table || ' : references',
+               NULL,
+               2
+        FROM fk_info fk
+        ORDER BY ord, line
+    );`;
+
+    const mermaidDefinition = db.exec(query)[0].values.join("\n");
+    const graphDiv = document.getElementById("graph");
+    graphDiv.innerHTML = `<pre class="mermaid">${mermaidDefinition}</pre>`;
+    
+    // Initialize or reinitialize Mermaid
+    if (window.mermaid) {
+        window.mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+    }
+}
