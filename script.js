@@ -188,15 +188,6 @@ async function main() {
         resultsDiv.appendChild(table);
     }
 
-    // Add graph toggle functionality
-    const toggleButton = document.getElementById("toggleGraph");
-    const graphElement = document.getElementById("graph");
-    
-    toggleButton.addEventListener("click", () => {
-        graphElement.classList.toggle("hidden");
-        toggleButton.textContent = graphElement.classList.contains("hidden") ? "Show Diagram" : "Hide Diagram";
-    });
-
     document.getElementById("closeDialog").addEventListener("click", () => {
         document.getElementById("warningDialog").close();
     });
