@@ -76,7 +76,10 @@ async function createSchemaMermaid(db) {
         SELECT 
             m.name as table_name,
             i.name as column_name,
-            i.type as column_type,
+            TRIM(SUBSTR(i.type, 1, CASE 
+                WHEN INSTR(i.type, '(') = 0 THEN LENGTH(i.type)
+                ELSE INSTR(i.type, '(') - 1
+            END)) as column_type,
             i.pk as is_primary_key,
             i."notnull" as is_not_null
         FROM sqlite_master m
