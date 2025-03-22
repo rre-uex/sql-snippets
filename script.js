@@ -32,7 +32,7 @@ async function myInitSqlJs(dbFile) {
         const tableList = tableNames.join(', ');
         const dialogMessage = `Failed to load remote database. An example database has been created with tables: ${tableList}`;
         document.getElementById("dialogMessage").textContent = dialogMessage;
-        document.getElementById("warningDialog").showModal();
+    //    document.getElementById("warningDialog").showModal();
 
         //Display tables in the results div
         //const tableListHTML = tableNames.map(name => `<li>${name}</li>`).join('');
@@ -45,6 +45,15 @@ async function myInitSqlJs(dbFile) {
 }
 
 async function main() {
+
+    // Add this near the beginning of the main function
+    // Initialize collapsible sections
+    document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.parentElement;
+            section.classList.toggle('collapsed');
+        });
+    });
 
     //Get the message from iframe document
     window.addEventListener('message', function (event) {
@@ -224,7 +233,14 @@ async function main() {
             console.log("No table results to submit.");
         }
     });
+
+    document.getElementById('loading').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'block';
 }
 
-main();
+main().catch(error => {
+    console.error('Error during initialization:', error);
+    document.getElementById('loading').style.display = 'none';
+    document.querySelector('.main-content').style.display = 'block';
+});
 

@@ -28,14 +28,36 @@
         </div>
     </div>
 
-    <div class="main-content">
-        <p>Practice your SQL skills here.</p>
-        <textarea id="sqlEditor">-- Run this query to get the database schema&#10;select * from sqlite_master where type='table';</textarea>
-        <div id="results"></div>
-        <div id="graph" class="hidden"></div>
+    <div id="loading" class="loading-container">
+        <div class="spinner"></div>
     </div>
 
-    
+    <div class="main-content-editor">
+        <textarea id="sqlEditor">-- Run this query to get the database schema&#10;select * from sqlite_master where type='table';</textarea>
+    </div>
+
+    <div class="main-content" style="display: none;">
+        <div class="collapsible-section collapsed">
+            <div class="section-header">
+                <span class="section-title">Database Diagram</span>
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="section-content">
+                <div id="graph"></div>
+            </div>
+        </div>
+   
+        <div class="collapsible-section">
+            <div class="section-header">
+                <span class="section-title">Query Results</span>
+                <span class="toggle-arrow">▼</span>
+            </div>
+            <div class="section-content">
+                <div id="results"></div>
+            </div>
+        </div>
+    </div>
+
     <dialog id="warningDialog">
         <h2>Database Load Warning</h2>
         <div id="dialogMessage"></div>

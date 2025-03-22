@@ -64,6 +64,68 @@ body {
 
 .main-content {
     padding: 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.main-content-editor {
+    padding: 20px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.collapsible-section {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: #fff;
+}
+
+.section-header {
+    background-color: #f8f9fa;
+    padding: 12px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    user-select: none;
+}
+
+.section-header:hover {
+    background-color: #e9ecef;
+}
+
+.section-title {
+    font-weight: 600;
+    color: #333;
+    font-size: 1.1em;
+}
+
+.toggle-arrow {
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.collapsible-section.collapsed .toggle-arrow {
+    transform: rotate(-90deg);
+}
+
+.collapsible-section .toggle-arrow {
+    transform: rotate(0deg);
+}
+
+.section-content {
+    transition: max-height 0.3s ease-out;
+    max-height: 2000px;
+    overflow: hidden;
+}
+
+.collapsible-section.collapsed .section-content {
+    max-height: 0;
+    overflow: hidden; /* Keep hidden for collapsed state */
 }
 
 .container {
@@ -90,9 +152,16 @@ p {
 /* CodeMirror Styling */
 .CodeMirror {
     height: auto;
-    border: 1px solid #ccc;
-    margin-bottom: 15px;
-    border-radius: 4px;
+    min-height: 200px;
+    border: none;
+    margin: 0;
+    border-radius: 0;
+}
+
+/* Add specific styling for the SQL editor section */
+.collapsible-section:nth-child(2) .section-content {
+    padding: 15px;
+    background-color: #fff;
 }
 
 /* Button Styling */
@@ -140,20 +209,20 @@ p {
 
 /* Results Styling */
 #results {
-    margin-top: 20px;
+    margin: 0;
     padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: #f9f9f9;
+    border: none;
+    border-radius: 0;
+    background-color: #fff;
 }
 
 /* Results Styling */
 #graph {
-    margin-top: 20px;
+    margin: 0;
     padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    background-color: #f9f9f9;
+    border: none;
+    border-radius: 0;
+    background-color: #fff;
 }
 
 #toggleGraph {
@@ -238,4 +307,26 @@ dialog #closeDialog:hover {
 #results p[style="color: red;"] {
     color: #d9534f;
     font-weight: bold;
+}
+
+/* Loading spinner styles */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #007BFF;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
