@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Query Example (Dynamic)</title>
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+     <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            margin: 20px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            border: 1px solid #ddd;
+            padding: 1em;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+        #sql-container { /* Add an ID for easier targeting */
+            margin-top: 1em;
+        }
+    </style>
+</head>
+<body>
+
+    <section id="sql-container">
+    </section>
+
+    <script>
+        // Function to get a query parameter from the URL
+        function getQueryParam(param) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(param);
+        }
+
+        // Get the SQL query from the 'query' parameter
+        const sqlQuery = getQueryParam('query');
+
+        // Get the container element
+        const sqlContainer = document.getElementById('sql-container');
+
+        // Create the <pre> and <code> elements
+        const preElement = document.createElement('pre');
+        const codeElement = document.createElement('code');
+        codeElement.classList.add('language-sql'); // Important for highlight.js
+
+        if (sqlQuery) {
+            // Decode the URI-encoded SQL query
+            const decodedSqlQuery = decodeURIComponent(sqlQuery);
+            codeElement.textContent = decodedSqlQuery; // Set the query text
+            preElement.appendChild(codeElement);
+            sqlContainer.appendChild(preElement);
+
+
+            // Now we can initialize highlight.js
+             hljs.highlightElement(codeElement);
+        } else {
+            // Display a message if no query parameter is provided
+            sqlContainer.innerHTML = '<p>No SQL query provided in the URL.</p>';
+        }
+    </script>
+
+</body>
+</html>
