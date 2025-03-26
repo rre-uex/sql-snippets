@@ -165,7 +165,7 @@ p {
 }
 
 /* Button Styling */
-#runButton {
+#runButton, #downloadButton {
     background-color: #007BFF;
     color: #fff;
     padding: 10px 15px;
@@ -176,8 +176,23 @@ p {
     transition: background-color 0.3s ease;
 }
 
-#runButton:hover {
+#runButton:hover, #downloadButton:hover {
     background-color: #0056b3;
+}
+
+#downloadButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 36px;
+}
+
+#downloadButton img {
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+    filter: invert(100%); /* Makes the SVG white to match the button text color */
 }
 
 /* Button Styling */

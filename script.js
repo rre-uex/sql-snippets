@@ -226,6 +226,51 @@ async function main() {
         }
     });
 
+    // Add download button handler
+    document.getElementById("downloadButton").addEventListener("click", async () => {
+        try {
+            // Get all table names
+            const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")[0].values;
+            
+            let sqlContent = '';
+            
+            // For each table
+            for (let [tableName] of tables) {
+                // Get CREATE statement
+                const createStmt = db.exec(`SELECT sql FROM sqlite_master WHERE type='table' AND name='${tableName}'`)[0].values[0][0];
+                sqlContent += createStmt + ';\n\n';
+                
+                // Get table data
+                const rows = db.exec(`SELECT * FROM "${tableName}"`)[0];
+                if (rows && rows.values.length > 0) {
+                    for (let row of rows.values) {
+                        const values = row.map(val => 
+                            val === null ? 'NULL' : 
+                            typeof val === 'string' ? `'${val.replace(/'/g, "''")}'` : val
+                        ).join(', ');
+                        sqlContent += `INSERT INTO "${tableName}" VALUES (${values});\n`;
+                    }
+                    sqlContent += '\n';
+                }
+            }
+
+            // Create and trigger download
+            const blob = new Blob([sqlContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const dbName = dbSelect.value.split('/').pop().replace('.db', '');
+            a.download = `${dbName}_export.sql`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting database:', error);
+            alert('Error exporting database: ' + error.message);
+        }
+    });
+
     document.getElementById('loading').style.display = 'none';
     document.querySelector('.main-content').style.display = 'block';
 }
