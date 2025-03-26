@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SQL Query Example (Dynamic)</title>
+    <title>SQL Block</title>
 
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
@@ -17,14 +18,38 @@
         pre {
             background-color: #f4f4f4;
             border: 1px solid #ddd;
-            padding: 1em;
+            padding: 0.1em;
             overflow-x: auto;
             border-radius: 5px;
+            position: relative;
         }
-        #sql-container { /* Add an ID for easier targeting */
+        code {
+            display: block;
+        }
+        #sql-container {
             margin-top: 1em;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: 16px;
+        }
+        .copy-button {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #fff;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            padding: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            z-index: 1;
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+        .copy-button:hover {
+            background: #f0f0f0;
+            opacity: 1;
         }
     </style>
 </head>
@@ -52,15 +77,31 @@
         codeElement.classList.add('language-sql'); // Important for highlight.js
 
         if (sqlQuery) {
+            // Create copy button
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-button';
+            copyButton.innerHTML = '<span class="material-icons">content_copy</span>';
+            copyButton.title = 'Copy to clipboard';
+            
             // Decode the URI-encoded SQL query
             const decodedSqlQuery = decodeURIComponent(sqlQuery);
-            codeElement.textContent = decodedSqlQuery; // Set the query text
+            codeElement.textContent = decodedSqlQuery;
             preElement.appendChild(codeElement);
+            preElement.appendChild(copyButton);
             sqlContainer.appendChild(preElement);
-
+            
+            copyButton.addEventListener('click', () => {
+                navigator.clipboard.writeText(decodedSqlQuery)
+                    .then(() => {
+                        copyButton.innerHTML = '<span class="material-icons">check</span>';
+                        setTimeout(() => {
+                            copyButton.innerHTML = '<span class="material-icons">content_copy</span>';
+                        }, 2000);
+                    });
+            });
 
             // Now we can initialize highlight.js
-             hljs.highlightElement(codeElement);
+            hljs.highlightElement(codeElement);
         } else {
             // Display a message if no query parameter is provided
             sqlContainer.innerHTML = '<p>No SQL query provided in the URL.</p>';
