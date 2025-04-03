@@ -242,6 +242,11 @@ p {
     background-color: #fff;
 }
 
+#graph > #mermaid > svg {
+    margin: 0 auto;
+    display: block;
+}
+
 /* Table Styling */
 table {
     width: 100%;
