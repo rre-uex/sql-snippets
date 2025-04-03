@@ -132,10 +132,14 @@ async function createSchemaMermaid(db) {
 
     const mermaidDefinition = db.exec(query)[0].values.join("\n");
     const graphDiv = document.getElementById("graph");
-    graphDiv.innerHTML = `<pre id="mermaid">${mermaidDefinition}</pre>`;
-    
+    const mermaidElement = document.createElement("pre");
+    mermaidElement.id = "mermaid";
+    mermaidElement.innerHTML = mermaidDefinition;
+    graphDiv.innerHTML = '';
+    graphDiv.appendChild(mermaidElement);
+
     // Initialize or reinitialize Mermaid
     if (window.mermaid) {
-        window.mermaid.init(undefined, document.getElementById("mermaid"));
+        window.mermaid.init(undefined, mermaidElement);
     }
 }
