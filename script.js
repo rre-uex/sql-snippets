@@ -65,14 +65,7 @@ async function main() {
     const message = { type: 'ping' };
     window.parent.postMessage(message, '*');
 
-    // Add this near the beginning of the main function
-    // Initialize collapsible sections
-    document.querySelectorAll('.section-header').forEach(header => {
-        header.addEventListener('click', () => {
-            const section = header.parentElement;
-            section.classList.toggle('collapsed');
-        });
-    });
+    // Initialize collapsible sections (will be set up after db is loaded)
 
     // Add cookie functions at the start of main
     const getCookie = name => {
@@ -125,6 +118,22 @@ async function main() {
     
     let db = await myInitSqlJs(dbSelect.value); // Initial load
     createSchemaMermaid(db);
+
+    // Initialize collapsible sections after database is loaded
+    document.querySelectorAll('.section-header').forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.parentElement;
+            const wasCollapsed = section.classList.contains('collapsed');
+            section.classList.toggle('collapsed');
+            
+            // If the Database Diagram section is being expanded, regenerate the mermaid diagram
+            if (wasCollapsed && header.querySelector('.section-title').textContent === 'Database Diagram') {
+                setTimeout(() => {
+                    createSchemaMermaid(db);
+                }, 100); // Small delay to ensure the section is visible
+            }
+        });
+    });
 
     dbSelect.addEventListener("change", async () => {
         db = await myInitSqlJs(dbSelect.value); // Reload on change
