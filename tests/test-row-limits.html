@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SQL.js Row Limit Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/sql-wasm.min.js"></script>
+</head>
+<body>
+    <h1>SQL.js Row Limit Test</h1>
+    <div id="test-results"></div>
+    
+    <script>
+    async function testRowLimits() {
+        const SQL = await initSqlJs({
+            locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/${file}`
+        });
+        
+        // Create test database with many rows
+        const db = new SQL.Database();
+        
+        // Create table
+        db.run("CREATE TABLE test_table (id INTEGER, value TEXT)");
+        
+        // Insert 100 rows
+        for (let i = 1; i <= 100; i++) {
+            db.run(`INSERT INTO test_table VALUES (${i}, 'Row ${i}')`);
+        }
+        
+        // Test query
+        const results = db.exec("SELECT * FROM test_table ORDER BY id");
+        
+        console.log("Total rows returned:", results[0].values.length);
+        console.log("First 5 rows:", results[0].values.slice(0, 5));
+        console.log("Last 5 rows:", results[0].values.slice(-5));
+        
+        // Display results
+        const resultsDiv = document.getElementById('test-results');
+        resultsDiv.innerHTML = `
+            <p>Total rows in database: 100</p>
+            <p>Total rows returned by query: ${results[0].values.length}</p>
+            <p>Expected: 100</p>
+            <p>Status: ${results[0].values.length === 100 ? 'PASS' : 'FAIL'}</p>
+        `;
+        
+        // Test with penguins database
+        try {
+            const response = await fetch('/db/penguins.db');
+            if (response.ok) {
+                const buffer = await response.arrayBuffer();
+                const penguinsDb = new SQL.Database(new Uint8Array(buffer));
+                const penguinsResults = db.exec("SELECT * FROM penguins");
+                
+                resultsDiv.innerHTML += `
+                    <hr>
+                    <p>Penguins database test:</p>
+                    <p>Rows returned: ${penguinsResults[0]?.values.length || 0}</p>
+                `;
+            }
+        } catch (error) {
+            console.error("Error loading penguins database:", error);
+        }
+    }
+    
+    testRowLimits();
+    </script>
+</body>
+</html>

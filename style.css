@@ -119,8 +119,8 @@ body {
 
 .section-content {
     transition: max-height 0.3s ease-out;
-    max-height: 2000px;
-    overflow: hidden;
+    max-height: 50000px; /* Increased limit to accommodate large result sets */
+    overflow: auto; /* Allow scrolling if needed */
 }
 
 .collapsible-section.collapsed .section-content {

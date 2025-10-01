@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SQL Row Display Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/sql-wasm.min.js"></script>
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>SQL Row Display Test</h1>
+    <button onclick="testPenguins()">Test Penguins Database</button>
+    <button onclick="testManyRows()">Test 100 Artificial Rows</button>
+    <div id="results"></div>
+    
+    <script>
+    let db;
+    
+    async function initDb() {
+        const SQL = await initSqlJs({
+            locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/${file}`
+        });
+        return SQL;
+    }
+    
+    async function testPenguins() {
+        const SQL = await initDb();
+        
+        try {
+            const response = await fetch('/db/penguins.db');
+            const buffer = await response.arrayBuffer();
+            db = new SQL.Database(new Uint8Array(buffer));
+            
+            console.log('Database loaded successfully');
+            
+            // Test the actual query
+            const results = db.exec("SELECT * FROM penguins");
+            console.log('Query executed, results:', results);
+            
+            if (results.length > 0) {
+                displayResults(results[0]);
+            } else {
+                document.getElementById('results').innerHTML = '<p>No results returned</p>';
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            document.getElementById('results').innerHTML = `<p>Error: ${error.message}</p>`;
+        }
+    }
+    
+    async function testManyRows() {
+        const SQL = await initDb();
+        db = new SQL.Database();
+        
+        // Create test table
+        db.run("CREATE TABLE test (id INTEGER, name TEXT, value REAL)");
+        
+        // Insert many rows
+        for (let i = 1; i <= 100; i++) {
+            db.run(`INSERT INTO test VALUES (${i}, 'Row ${i}', ${Math.random() * 100})`);
+        }
+        
+        // Query all rows
+        const results = db.exec("SELECT * FROM test ORDER BY id");
+        console.log('Test query results:', results);
+        
+        if (results.length > 0) {
+            displayResults(results[0]);
+        }
+    }
+    
+    function displayResults(result) {
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '';
+        
+        console.log(`Displaying ${result.values.length} rows`);
+        
+        // Create info
+        const info = document.createElement('p');
+        info.textContent = `Total rows: ${result.values.length}`;
+        resultsDiv.appendChild(info);
+        
+        // Create table
+        const table = document.createElement('table');
+        
+        // Header
+        const headerRow = document.createElement('tr');
+        result.columns.forEach(col => {
+            const th = document.createElement('th');
+            th.textContent = col;
+            headerRow.appendChild(th);
+        });
+        table.appendChild(headerRow);
+        
+        // Rows
+        result.values.forEach((row, index) => {
+            const tr = document.createElement('tr');
+            row.forEach(value => {
+                const td = document.createElement('td');
+                td.textContent = value;
+                tr.appendChild(td);
+            });
+            table.appendChild(tr);
+        });
+        
+        resultsDiv.appendChild(table);
+        
+        // Final count
+        const finalInfo = document.createElement('p');
+        finalInfo.textContent = `Table rows created: ${table.rows.length - 1} (excluding header)`;
+        resultsDiv.appendChild(finalInfo);
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Detailed SQL Debug Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/sql-wasm.min.js"></script>
+    <style>
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; font-family: monospace; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 4px; text-align: left; font-size: 12px; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Detailed SQL Debug Test</h1>
+    <button onclick="runFullTest()">Run Full Penguins Test</button>
+    <div id="debug-log"></div>
+    <div id="results"></div>
+    
+    <script>
+    function log(message) {
+        const debugDiv = document.getElementById('debug-log');
+        const p = document.createElement('div');
+        p.className = 'debug';
+        p.innerHTML = `[${new Date().toLocaleTimeString()}] ${message}`;
+        debugDiv.appendChild(p);
+        console.log(message);
+    }
+    
+    async function runFullTest() {
+        document.getElementById('debug-log').innerHTML = '';
+        document.getElementById('results').innerHTML = '';
+        
+        log('=== STARTING FULL PENGUINS TEST ===');
+        
+        try {
+            // Initialize SQL.js
+            log('1. Initializing SQL.js...');
+            const SQL = await initSqlJs({
+                locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.9.0/${file}`
+            });
+            log('✓ SQL.js initialized successfully');
+            
+            // Load database
+            log('2. Loading penguins database...');
+            const response = await fetch('/db/penguins.db');
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const buffer = await response.arrayBuffer();
+            log(`✓ Database loaded, size: ${buffer.byteLength} bytes`);
+            
+            const db = new SQL.Database(new Uint8Array(buffer));
+            log('✓ Database created from buffer');
+            
+            // Test table exists
+            log('3. Checking if penguins table exists...');
+            const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='penguins'");
+            if (tables.length === 0 || tables[0].values.length === 0) {
+                throw new Error('Penguins table not found');
+            }
+            log('✓ Penguins table exists');
+            
+            // Get row count
+            log('4. Getting row count...');
+            const countResult = db.exec("SELECT COUNT(*) as count FROM penguins");
+            const totalRows = countResult[0].values[0][0];
+            log(`✓ Total rows in database: ${totalRows}`);
+            
+            // Execute main query
+            log('5. Executing SELECT * FROM penguins...');
+            const startTime = performance.now();
+            const results = db.exec("SELECT * FROM penguins");
+            const endTime = performance.now();
+            log(`✓ Query executed in ${(endTime - startTime).toFixed(2)}ms`);
+            
+            // Analyze results
+            if (results.length === 0) {
+                log('❌ ERROR: No results returned from query');
+                return;
+            }
+            
+            const result = results[0];
+            log(`✓ Results object created, columns: ${result.columns.length}, rows: ${result.values.length}`);
+            log(`   Columns: [${result.columns.join(', ')}]`);
+            log(`   First row: [${result.values[0]?.join(', ') || 'NONE'}]`);
+            log(`   Last row: [${result.values[result.values.length - 1]?.join(', ') || 'NONE'}]`);
+            
+            // Check for any truncation
+            if (result.values.length !== totalRows) {
+                log(`❌ MISMATCH: Expected ${totalRows} rows, got ${result.values.length} rows`);
+            } else {
+                log(`✓ Row count matches: ${result.values.length} = ${totalRows}`);
+            }
+            
+            // Test different LIMIT values
+            log('6. Testing different LIMIT values...');
+            for (let limit of [10, 40, 41, 50, 100, 200]) {
+                const limitResult = db.exec(`SELECT * FROM penguins LIMIT ${limit}`);
+                log(`   LIMIT ${limit}: returned ${limitResult[0].values.length} rows`);
+            }
+            
+            // Display results
+            log('7. Creating table display...');
+            displayTestResults(result);
+            
+        } catch (error) {
+            log(`❌ ERROR: ${error.message}`);
+            console.error(error);
+        }
+    }
+    
+    function displayTestResults(result) {
+        const resultsDiv = document.getElementById('results');
+        
+        // Create summary
+        const summary = document.createElement('div');
+        summary.className = 'debug';
+        summary.innerHTML = `
+            <strong>DISPLAY TEST RESULTS:</strong><br>
+            Columns: ${result.columns.length}<br>
+            Rows to display: ${result.values.length}<br>
+            Memory usage estimate: ${(result.values.length * result.columns.length * 20)} bytes
+        `;
+        resultsDiv.appendChild(summary);
+        
+        // Create table
+        const table = document.createElement('table');
+        
+        // Header
+        const headerRow = document.createElement('tr');
+        result.columns.forEach(col => {
+            const th = document.createElement('th');
+            th.textContent = col;
+            headerRow.appendChild(th);
+        });
+        table.appendChild(headerRow);
+        
+        // Add rows with counter
+        let actualRowsAdded = 0;
+        result.values.forEach((row, index) => {
+            try {
+                const tr = document.createElement('tr');
+                row.forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+                actualRowsAdded++;
+            } catch (error) {
+                log(`❌ Error adding row ${index}: ${error.message}`);
+            }
+        });
+        
+        resultsDiv.appendChild(table);
+        
+        // Final summary
+        const finalSummary = document.createElement('div');
+        finalSummary.className = 'debug';
+        finalSummary.innerHTML = `
+            <strong>FINAL RESULTS:</strong><br>
+            Rows in result set: ${result.values.length}<br>
+            Rows actually added to table: ${actualRowsAdded}<br>
+            Total table rows (including header): ${table.rows.length}<br>
+            Table visible in DOM: ${table.parentNode !== null}
+        `;
+        resultsDiv.appendChild(finalSummary);
+        
+        log(`✓ Table created with ${actualRowsAdded} rows`);
+    }
+    </script>
+</body>
+</html>

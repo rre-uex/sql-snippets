@@ -176,6 +176,17 @@ async function main() {
             return;
         }
 
+        const totalRows = results[0].values.length;
+        console.log(`Total rows in results: ${totalRows}`);
+
+        // Create info paragraph showing row count
+        const infoP = document.createElement("p");
+        infoP.style.color = "#666";
+        infoP.style.fontSize = "0.9em";
+        infoP.style.marginBottom = "10px";
+        infoP.textContent = `Showing all ${totalRows} rows`;
+        resultsDiv.appendChild(infoP);
+
         const table = document.createElement("table");
         const headerRow = document.createElement("tr");
         results[0].columns.forEach(column => {
@@ -185,6 +196,7 @@ async function main() {
         });
         table.appendChild(headerRow);
 
+        // Add all rows - the CSS issue has been fixed
         results[0].values.forEach(row => {
             const tr = document.createElement("tr");
             row.forEach(value => {
@@ -196,6 +208,7 @@ async function main() {
         });
 
         resultsDiv.appendChild(table);
+        console.log(`Table created with ${table.rows.length - 1} data rows`);
     }
 
     document.getElementById("closeDialog").addEventListener("click", () => {
