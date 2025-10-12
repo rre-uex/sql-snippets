@@ -188,6 +188,7 @@ async function main() {
         resultsDiv.appendChild(infoP);
 
         const table = document.createElement("table");
+        table.id = "resultsTable"; // Add ID for easy identification
         const headerRow = document.createElement("tr");
         results[0].columns.forEach(column => {
             const th = document.createElement("th");
@@ -222,22 +223,17 @@ async function main() {
         const currentQuery = editor.getValue();
         setCookie('lastQuery', currentQuery);
 
-        const resultsDiv = document.getElementById("results");
-        if (resultsDiv.firstChild && resultsDiv.firstChild.tagName === 'TABLE') {
-           
-    
-            const table = resultsDiv.querySelector('table');
+        const table = document.getElementById("resultsTable");
+        if (table) {
             let tableString = "";
-            if (table) {
-                const rows = table.querySelectorAll('tr');
-                rows.forEach(row => {
-                    const cells = row.querySelectorAll('th, td');
-                    cells.forEach(cell => {
-                        tableString += cell.textContent + " ";
-                    });
-                    tableString += "\n";
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('th, td');
+                cells.forEach(cell => {
+                    tableString += cell.textContent + " ";
                 });
-            }
+                tableString += "\n";
+            });
             const hash = CryptoJS.MD5(tableString.trim()).toString(); // Calculate MD5 hash
             console.log("MD5 Hash of Results:", hash); // Log the hash
             console.log(tableString.trim()); // Log the hash
