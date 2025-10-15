@@ -91,13 +91,18 @@ async function createSchemaMermaid(db) {
             table_name,
             group_concat('    ' || column_type || ' ' || column_name || 
                 CASE 
-                    WHEN is_primary_key = 1 THEN ' PK'
-                    WHEN is_not_null = 1 AND EXISTS(
+                    WHEN is_primary_key > 0 AND EXISTS(
                         SELECT 1 FROM sqlite_master sm 
                         JOIN pragma_foreign_key_list(sm.name) fk ON sm.name = table_name 
                         WHERE fk."from" = column_name AND sm.type = 'table'
-                    ) THEN ' FK'
-                    ELSE ''
+                    ) THEN ' PK, FK'  -- Both PK and FK with comma
+                    WHEN is_primary_key > 0 THEN ' PK'  -- Only PK
+                    WHEN EXISTS(
+                        SELECT 1 FROM sqlite_master sm 
+                        JOIN pragma_foreign_key_list(sm.name) fk ON sm.name = table_name 
+                        WHERE fk."from" = column_name AND sm.type = 'table'
+                    ) THEN ' FK'  -- Only FK
+                    ELSE ''  -- Neither PK nor FK
                 END, char(10)) as columns
         FROM table_info
         GROUP BY table_name
@@ -178,7 +183,7 @@ async function createSchemaMermaid(db) {
     SELECT group_concat(
         CASE 
             WHEN section = 'header' THEN line
-            WHEN section = 'tables' THEN line || ' {' || char(10) || columns || '}'
+            WHEN section = 'tables' THEN line || ' {' || char(10) || columns || char(10) || '}'
             WHEN section = 'relations' THEN line
         END, 
         char(10)
