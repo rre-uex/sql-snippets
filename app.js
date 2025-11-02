@@ -2,36 +2,163 @@
 // This is the "correct answer" the student's work will be checked against.
 // You can change this string to whatever your assignment's correct solution is.
 const expectedSolutionText = `
-    erdiagram Univesidad
-    
-    entity Estudiante {  
-        numExpediente Key
-        nombre  
-        apellido1  
-        apellido2  
-    }
+erdiagram Model
+notation=crowsfoot
 
-    entity Titulacion {
-        codTitulacion key
-        nombre
-    }
 
-    relationship matriculadoEn {
-        Estudiante[1..N] -> Titulacion[1..1]
-        fechaMatriculacion
-    }
-    
-   weak entity Asignatura {
-codAsignatura partial-key //atributo aportado a la clave primaria por la entidad débil Asignatura
-nombreAsignatura
+entity Planeta {
+    cod_planeta key
+    nombre
+    num_lunas
+    rotacion_horas
+    orbita_dias
 }
 
-weak relationship compuestaDe {
-Titulacion[1..1] -> Asignatura[1..N]
+
+entity Centro {
+    cod_centro key
+    nom_centro
+    coordenadas
+    fecha_creacion
 }
 
-relationship** esMentorDe {
-Estudiante[0..1| "Mentor"] -> Estudiante[0..N|"Mentorizado"]
+
+relationship esPrincipalEn {
+    Centro[1..1] ->Planeta[0..1]
+}
+
+
+relationship ubicadoEn {
+    Centro[1..N] ->Planeta[1..1]
+}
+
+// Entidad ClaseMineral
+entity ClaseMineral {
+    cod_clase_mineral key
+    nom_clase_mineral
+}
+
+relationship relacionadoCon {
+    Mineral[0..N] ->Mineral[0..N]
+}
+
+relationship agrupaA {
+    Mineral[1..N] ->ClaseMineral[1..1]
+}
+
+
+// Entidad Mineral
+entity Mineral {
+    cod_mineral key
+    nom_mineral
+    desc_propiedades
+}
+
+
+relationship EncontradoPor {
+    Mineral[0..N] -> Centro[0..N]  
+    fecha_hallazgo
+}
+
+
+weak entity HistoricoExtraccion {
+    fecha partial-key
+    cantidad
+    attr1
+}
+
+weak relationship extraidoPor {
+    HistoricoExtraccion[0..N] -> Centro[1..1]     
+}
+
+weak relationship incluidoEn {
+    HistoricoExtraccion[0..N] -> Mineral[1..1] 
+}
+
+
+weak entity Cargamento {
+    cod_cargam partial-key
+    fecha_cargam
+}
+
+weak relationship almacenadoEn {
+    Cargamento[0..N] -> Centro[1..1]     
+}
+
+relationship formaParteDe {
+    Cargamento[0..N] -> Mineral[1..1]  
+    cantidad   
+}
+
+
+entity Vehiculo {
+    matricula key
+    modelo
+}
+
+entity NaveEspacial extends Vehiculo{
+    matricula key
+    capacidad
+}
+
+relationship asignadaA {
+   Vehiculo[1..N] -> Planeta[1..1]  
+}
+
+
+weak entity Vuelo {
+    fecha_ini partial-key
+    hora_ini partial-key
+    fecha_fin
+    hora_fin
+}
+
+weak relationship realizadoPor {
+    Vuelo[0..N] -> NaveEspacial[1..1]     
+}
+
+
+relationship transportadoEn {
+   Cargamento[1..N] -> Vuelo[0..1]  
+}
+
+ relationship origenDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+
+ relationship destinoDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+
+entity Persona{
+    numPersonal key
+    nombrePersona
+    fechaAlta
+    puesto
+    pasaporte //UNIQUE
+}
+
+//parcial,solapada
+entity Directivo extends Persona{
+    numPersonal key
+}
+
+//parcial,solapada
+entity Astronauta extends Persona{
+    numPersonal key
+}
+
+relationship trabajaEn {
+    Persona[1..N] -> Centro[1..1]     
+}
+
+relationship coordina {
+    Directivo[1..1] -> Centro[1..1]
+    fecha_coor     
+}
+
+relationship pilota {
+    Astronauta[1..N] -> Vuelo[0..N]     
 }
 
 `;
@@ -45,37 +172,58 @@ function parseERD(text) {
         relationships: []
     };
 
-    // Clean up text: remove comments and extra whitespace
-    const cleanText = text.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '').trim();
+    // Clean up text: remove block comments but keep line comments (we need //UNIQUE)
+    const cleanText = text.replace(/\/\*[\s\S]*?\*\//g, '').trim();
 
-    // Regex to find entities (including weak ones)
-    const entityRegex = /(weak\s+)?entity\s+(\w+)\s*\{([\s\S]*?)\}/g;
+    // Regex to find entities (including weak ones) with possible preceding comment
+    // Captura el comentario de la línea anterior si existe
+    const entityRegex = /(?:\/\/([^\n]*)\n\s*)?(weak\s+)?entity\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{([\s\S]*?)\}/g;
     let match;
 
     // --- Parse Entities ---
     while ((match = entityRegex.exec(cleanText)) !== null) {
-        const isWeak = !!match[1];
-        const name = match[2];
-        const body = match[3];
+        const precedingComment = match[1] ? match[1].trim() : null;
+        const isWeak = !!match[2];
+        const name = match[3];
+        const extendsFrom = match[4] || null;
+        const body = match[5];
 
         const entity = {
             name: name,
             isWeak: isWeak,
+            extendsFrom: extendsFrom,
+            specialization: null,
             attributes: []
         };
+
+        // Parse specialization comment (parcial/total, solapada/disjunta)
+        // Solo si la entidad tiene extends
+        if (precedingComment) {
+            const specializationMatch = precedingComment.match(/^\s*(parcial|total)(?:\s*,\s*(solapada|disjunta))?\s*$/i);
+            if (specializationMatch) {
+                // Siempre parseamos el comentario si coincide con el patrón
+                entity.specialization = {
+                    completeness: specializationMatch[1].toLowerCase(),
+                    overlap: specializationMatch[2] ? specializationMatch[2].toLowerCase() : null
+                };
+            }
+        }
 
         // Parse attributes within the entity body
         const lines = body.trim().split('\n');
         for (const line of lines) {
             const attrLine = line.trim();
             if (attrLine) {
-                // Regex for: name, :type (optional), and classifier (key, partial-key)
+                // Verificar si tiene comentario //UNIQUE
+                const hasUniqueComment = /\/\/\s*UNIQUE/.test(attrLine);
+                
                 const attrMatch = attrLine.match(/^(\w+)\s*(:\s*\w+)?\s*(key|partial-key|derived)?/);
                 if (attrMatch) {
                     entity.attributes.push({
                         name: attrMatch[1],
                         isKey: attrMatch[3] === 'key',
-                        isPartialKey: attrMatch[3] === 'partial-key'
+                        isPartialKey: attrMatch[3] === 'partial-key',
+                        isUnique: hasUniqueComment
                     });
                 }
             }
@@ -84,7 +232,6 @@ function parseERD(text) {
     }
     
     // --- Parse Relationships ---
-    // Regex to find relationships (including weak ones)
     const relRegex = /(weak\s+)?relationship\s+(\w+)\s*\{([\s\S]*?)\}/g;
 
     while ((match = relRegex.exec(cleanText)) !== null) {
@@ -95,22 +242,69 @@ function parseERD(text) {
         const relationship = {
             name: name,
             isWeak: isWeak,
-            links: []
+            links: [],
+            attributes: [] // AÑADIR: array para atributos de la relación
         };
 
-        // Parse links within the relationship body
+        // Parse links and attributes within the relationship body
         const lines = body.trim().split('\n');
         for (const line of lines) {
-            const linkLine = line.trim();
-            // Regex for: Entity1[cardinality] -> Entity2[cardinality]
-            const linkMatch = linkLine.match(/(\w+)\s*(\[.*?\])?\s*->\s*(\w+)\s*(\[.*?\])?/);
-            if (linkMatch) {
-                relationship.links.push({
-                    from: linkMatch[1],
-                    fromCardinality: linkMatch[2] ? linkMatch[2].replace(/[\[\]]/g, '') : '1', // Default to 1 if not specified
-                    to: linkMatch[3],
-                    toCardinality: linkMatch[4] ? linkMatch[4].replace(/[\[\]]/g, '') : '1' // Default to 1 if not specified
-                });
+            // Limpiar comentarios que no sean parte de la sintaxis
+            const linkLine = line.replace(/\/\/(?!UNIQUE).*/g, '').trim();
+            // Regex para links - ahora busca TODAS las flechas en la línea
+            const arrowCount = (linkLine.match(/->/g) || []).length;
+            
+            if (arrowCount > 0) {
+                // Si hay flechas, parsear cada segmento
+                const segments = linkLine.split('->').map(s => s.trim());
+                
+                for (let i = 0; i < segments.length - 1; i++) {
+                    const fromPart = segments[i];
+                    const toPart = segments[i + 1];
+                    
+                    // Extraer entidad y cardinalidad del segmento "from"
+                    const fromMatch = fromPart.match(/(\w+)\s*(\[[^\]]*\])?$/);
+                    // Extraer entidad y cardinalidad del segmento "to"
+                    const toMatch = toPart.match(/^(\w+)\s*(\[[^\]]*\])?/);
+                    
+                    // Validar que ambos lados de la flecha sean entidades válidas
+                    if (!fromMatch || !toMatch) {
+                        throw new Error(`Invalid link syntax in relationship "${name}": "${linkLine}". Each arrow (->) must connect two entities.`);
+                    }
+                    
+                    if (fromMatch && toMatch) {
+                        // Extraer cardinalidad y rol del formato [cardinalidad | "rol"]
+                        const parseCardinalityAndRole = (bracketContent) => {
+                            if (!bracketContent) return { cardinality: '1', role: null };
+                            const cleaned = bracketContent.replace(/[\[\]]/g, '');
+                            const parts = cleaned.split('|').map(p => p.trim());
+                            return {
+                                cardinality: parts[0],
+                                role: parts[1] ? parts[1].replace(/['"]/g, '') : null
+                            };
+                        };
+                        
+                        const fromData = parseCardinalityAndRole(fromMatch[2]);
+                        const toData = parseCardinalityAndRole(toMatch[2]);
+                        
+                        relationship.links.push({
+                            from: fromMatch[1],
+                            fromCardinality: fromData.cardinality,
+                            fromRole: fromData.role,
+                            to: toMatch[1],
+                            toCardinality: toData.cardinality,
+                            toRole: toData.role
+                        });
+                    }
+                }
+            } else if (linkLine && !linkLine.match(/[{}]/)) {
+                // Si no es un link ni llaves, es un atributo de la relación
+                const attrMatch = linkLine.match(/^(\w+)/);
+                if (attrMatch) {
+                    relationship.attributes.push({
+                        name: attrMatch[1]
+                    });
+                }
             }
         }
         erd.relationships.push(relationship);
@@ -125,7 +319,6 @@ function parseERD(text) {
 function compareSolutions(student, expected) {
     const errors = [];
     
-    // Helper to find an item by name
     const findByName = (arr, name) => arr.find(item => item.name === name);
 
     // --- Check Entities ---
@@ -137,10 +330,9 @@ function compareSolutions(student, expected) {
         const stuEntity = findByName(student.entities, expEntity.name);
         if (!stuEntity) {
             errors.push(`Missing Entity: The entity "${expEntity.name}" is missing.`);
-            continue; // Skip attribute checks if entity is missing
+            continue;
         }
 
-        // Check if weak entity status is correct
         if (expEntity.isWeak && !stuEntity.isWeak) {
             errors.push(`Incorrect Entity Type: The entity "${expEntity.name}" should be marked as weak.`);
         }
@@ -148,23 +340,83 @@ function compareSolutions(student, expected) {
             errors.push(`Incorrect Entity Type: The entity "${expEntity.name}" should NOT be marked as weak.`);
         }
 
-        // Check attributes for this entity
+        // Check extends (inheritance)
+        if (expEntity.extendsFrom !== stuEntity.extendsFrom) {
+            if (expEntity.extendsFrom && !stuEntity.extendsFrom) {
+                errors.push(`Incorrect Entity: The entity "${expEntity.name}" should extend "${expEntity.extendsFrom}".`);
+            } else if (!expEntity.extendsFrom && stuEntity.extendsFrom) {
+                errors.push(`Incorrect Entity: The entity "${expEntity.name}" should NOT extend any entity.`);
+            } else {
+                errors.push(`Incorrect Entity: The entity "${expEntity.name}" should extend "${expEntity.extendsFrom}" but extends "${stuEntity.extendsFrom}".`);
+            }
+        }
+
+        // Check specialization (parcial/total, solapada/disjunta) for entities with extends
+        if (expEntity.extendsFrom) {
+            const expSpec = expEntity.specialization;
+            const stuSpec = stuEntity.specialization;
+
+            if (expSpec) {
+                if (!stuSpec) {
+                    const expectedComment = expSpec.overlap 
+                        ? `//${expSpec.completeness},${expSpec.overlap}` 
+                        : `//${expSpec.completeness}`;
+                    errors.push(`Missing Specialization Comment: The entity "${expEntity.name}" should have the comment "${expectedComment}" before its declaration.`);
+                } else {
+                    // Verificar completeness (parcial/total) primero
+                    if (expSpec.completeness !== stuSpec.completeness) {
+                        errors.push(`Incorrect Specialization in "${expEntity.name}": Expected "${expSpec.completeness}" but found "${stuSpec.completeness}".`);
+                    } else {
+                        // Solo verificar overlap si completeness es correcto
+                        if (expSpec.overlap !== stuSpec.overlap) {
+                            if (expSpec.overlap && !stuSpec.overlap) {
+                                errors.push(`Incorrect Specialization in "${expEntity.name}": "${expSpec.completeness}" is correct but missing "${expSpec.overlap}".`);
+                            } else if (!expSpec.overlap && stuSpec.overlap) {
+                                errors.push(`Incorrect Specialization in "${expEntity.name}": Should only have "${expSpec.completeness}", not "${stuSpec.overlap}".`);
+                            } else {
+                                errors.push(`Incorrect Specialization in "${expEntity.name}": "${expSpec.completeness}" is correct but "${stuSpec.overlap}" is incorrect, should be "${expSpec.overlap}".`);
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Si NO tiene extends, NO debería tener comentario de especialización
+            if (stuEntity.specialization) {
+                const stuSpec = stuEntity.specialization;
+                const incorrectComment = stuSpec.overlap 
+                    ? `//${stuSpec.completeness},${stuSpec.overlap}` 
+                    : `//${stuSpec.completeness}`;
+                errors.push(`Incorrect Specialization Comment: The entity "${expEntity.name}" does not extend any entity and should NOT have the comment "${incorrectComment}" before its declaration.`);
+            }
+        }
+
         if (expEntity.attributes.length !== stuEntity.attributes.length) {
             errors.push(`Problem in Entity "${expEntity.name}": Expected ${expEntity.attributes.length} attributes, but found ${stuEntity.attributes.length}.`);
         }
 
-        // Check for specific attributes and keys
         for (const expAttr of expEntity.attributes) {
             const stuAttr = findByName(stuEntity.attributes, expAttr.name);
             if (!stuAttr) {
                 errors.push(`Missing Attribute in "${expEntity.name}": The attribute "${expAttr.name}" is missing.`);
             } else {
-                // Check if key status is correct
                 if (expAttr.isKey && !stuAttr.isKey) {
                     errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should be a key.`);
                 }
+                if (!expAttr.isKey && stuAttr.isKey) {
+                    errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should NOT be a key.`);
+                }
                 if (expAttr.isPartialKey && !stuAttr.isPartialKey) {
                      errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should be a partial-key.`);
+                }
+                if (!expAttr.isPartialKey && stuAttr.isPartialKey) {
+                     errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should NOT be a partial-key.`);
+                }
+                if (expAttr.isUnique && !stuAttr.isUnique) {
+                     errors.push(`Incorrect Unique constraint in "${expEntity.name}": The attribute "${expAttr.name}" should be marked as UNIQUE (//UNIQUE).`);
+                }
+                if (!expAttr.isUnique && stuAttr.isUnique) {
+                     errors.push(`Incorrect Unique constraint in "${expEntity.name}": The attribute "${expAttr.name}" should NOT be marked as UNIQUE.`);
                 }
             }
         }
@@ -182,7 +434,6 @@ function compareSolutions(student, expected) {
             continue;
         }
 
-        // Check if weak relationship status is correct
         if (expRel.isWeak && !stuRel.isWeak) {
             errors.push(`Incorrect Relationship Type: The relationship "${expRel.name}" should be marked as weak.`);
         }
@@ -190,24 +441,51 @@ function compareSolutions(student, expected) {
             errors.push(`Incorrect Relationship Type: The relationship "${expRel.name}" should NOT be marked as weak.`);
         }
 
-        // Check cardinality in links (simplified check)
-        // A more robust check would compare each link, but this is a good start.
         if (expRel.links.length !== stuRel.links.length) {
             errors.push(`Problem in Relationship "${expRel.name}": Expected ${expRel.links.length} links, but found ${stuRel.links.length}.`);
         } else {
-            // Check cardinalities
-            for (let i = 0; i < expRel.links.length; i++) {
-                const expLink = expRel.links[i];
-                const stuLink = stuRel.links[i];
+            // Verificar cada link esperado
+            for (const expLink of expRel.links) {
+                // Buscar si existe un link que coincida (en cualquier dirección)
+                const matchingLink = stuRel.links.find(stuLink => {
+                    // Dirección normal: A -> B
+                    const normalMatch = 
+                        stuLink.from === expLink.from && 
+                        stuLink.to === expLink.to &&
+                        stuLink.fromCardinality === expLink.fromCardinality &&
+                        stuLink.toCardinality === expLink.toCardinality &&
+                        stuLink.fromRole === expLink.fromRole &&
+                        stuLink.toRole === expLink.toRole;
+                    
+                    // Dirección inversa: B -> A (intercambiando también las cardinalidades Y roles)
+                    const reverseMatch = 
+                        stuLink.from === expLink.to && 
+                        stuLink.to === expLink.from &&
+                        stuLink.fromCardinality === expLink.toCardinality &&
+                        stuLink.toCardinality === expLink.fromCardinality &&
+                        stuLink.fromRole === expLink.toRole &&
+                        stuLink.toRole === expLink.fromRole;
+                    
+                    return normalMatch || reverseMatch;
+                });
                 
-                // Check "from" cardinality
-                if (expLink.fromCardinality !== stuLink.fromCardinality) {
-                    errors.push(`Incorrect Cardinality in "${expRel.name}": Expected ${expLink.from}[${expLink.fromCardinality}] but found ${stuLink.from}[${stuLink.fromCardinality}].`);
+                if (!matchingLink) {
+                    const fromDesc = expLink.fromRole ? `${expLink.from}[${expLink.fromCardinality} | "${expLink.fromRole}"]` : `${expLink.from}[${expLink.fromCardinality}]`;
+                    const toDesc = expLink.toRole ? `${expLink.to}[${expLink.toCardinality} | "${expLink.toRole}"]` : `${expLink.to}[${expLink.toCardinality}]`;
+                    errors.push(`Incorrect Link in "${expRel.name}": Expected link between ${fromDesc} and ${toDesc} not found or has wrong cardinalities/roles.`);
                 }
-                // Check "to" cardinality
-                 if (expLink.toCardinality !== stuLink.toCardinality) {
-                    errors.push(`Incorrect Cardinality in "${expRel.name}": Expected ${expLink.to}[${expLink.toCardinality}] but found ${stuLink.to}[${stuLink.toCardinality}].`);
-                }
+            }
+        }
+
+        // AÑADIR: Verificar atributos de la relación
+        if (expRel.attributes.length !== stuRel.attributes.length) {
+            errors.push(`Problem in Relationship "${expRel.name}": Expected ${expRel.attributes.length} attributes, but found ${stuRel.attributes.length}.`);
+        }
+
+        for (const expAttr of expRel.attributes) {
+            const stuAttr = findByName(stuRel.attributes, expAttr.name);
+            if (!stuAttr) {
+                errors.push(`Missing Attribute in Relationship "${expRel.name}": The attribute "${expAttr.name}" is missing.`);
             }
         }
     }
@@ -289,7 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (e) {
             // Handle any parsing errors
             console.error(e);
-            resultsDiv.textContent = 'Error: Could not understand your ERD syntax. Please check for typos.';
+            resultsDiv.textContent = 'Error: ' + e.message;
             resultsDiv.className = 'error';
         }
     });
