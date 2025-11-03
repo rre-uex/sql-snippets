@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Decode</title>
+</head>
+<body>
+    <h1>Test de Decodificación</h1>
+    <div id="output"></div>
+    
+    <script>
+        const encoded = "ZXJkaWFncmFtJTIwTW9kZWwlMEFub3RhdGlvbiUzRGNyb3dzZm9vdCUwQSUwQWVudGl0eSUyMFBST1ZFRURPUiUyMCU3QiUwQWlkX3Byb3ZlZWRvciUyMGtleSUwQSU3RCUwQSUwQWVudGl0eSUyMFBST1lFQ1RPJTIwJTdCJTBBaWRfcHJveWVjdG8lMjBrZXklMEElN0QlMEElMEFlbnRpdHklMjBSRVBVRVNUTyUyMCU3QiUwQWlkX3JlcHVlc3RvJTIwa2V5JTBBJTdEJTBBJTBBcmVsYXRpb25zaGlwJTIwc3VtaW5pc3RyYSUyMCU3QiUwQVBST1ZFRURPUiU1QjEuLk4lNUQlMjAtJTNFJTIwUFJPWUVDVE8lNUIxLi5OJTVEJTIwLSUzRSUyMFJFUFVFU1RPJTVCMS4uTiU1RCUwQWNhbnRpZGFkJTBBJTdE";
+        
+        function decodeBase64(str) {
+            try {
+                // Primero decodificamos de base64 a string
+                const base64Decoded = atob(str);
+                // Luego decodificamos el URI encoding
+                return decodeURIComponent(base64Decoded);
+            } catch (e) {
+                console.error('Error decoding base64:', e);
+                return null;
+            }
+        }
+        
+        const decoded = decodeBase64(encoded);
+        
+        console.log('Decoded:', decoded);
+        document.getElementById('output').innerHTML = '<pre>' + decoded + '</pre>';
+        
+        // Ahora probemos a parsear
+        const cleanText = decoded.replace(/\/\*[\s\S]*?\*\//g, '').trim();
+        console.log('Clean text:', cleanText);
+        
+        const entityRegex = /(?:\/\/([^\n]*)\n\s*)?(weak\s+)?entity\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{([\s\S]*?)\}/g;
+        let match;
+        let entities = [];
+        
+        while ((match = entityRegex.exec(cleanText)) !== null) {
+            entities.push(match[3]);
+            console.log('Found entity:', match[3]);
+        }
+        
+        console.log('Total entities:', entities.length);
+        
+        const relRegex = /(weak\s+)?relationship\s+(\w+)\s*\{([\s\S]*?)\}/g;
+        let relationships = [];
+        
+        while ((match = relRegex.exec(cleanText)) !== null) {
+            relationships.push(match[2]);
+            console.log('Found relationship:', match[2]);
+        }
+        
+        console.log('Total relationships:', relationships.length);
+    </script>
+</body>
+</html>

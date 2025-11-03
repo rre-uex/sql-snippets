@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Improved Error Messages</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2980b9;
+            margin-bottom: 15px;
+        }
+        .error-list {
+            background: #fff5f5;
+            border-left: 4px solid #e74c3c;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 10px 0;
+            color: #155724;
+        }
+        .observation {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 10px 0;
+            font-style: italic;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test: Improved Error Messages</h1>
+    <p>This page demonstrates the enhanced error messages with icons, suggestions, and code examples.</p>
+
+    <div id="results"></div>
+
+    <script src="../appParametrizable.js"></script>
+    <script>
+        const resultsDiv = document.getElementById('results');
+
+        // Test 1: Entity count mismatch
+        function test1() {
+            const expected = `
+                entity Persona {
+                    key dni
+                    nombre
+                }
+                entity Empresa {
+                    key cif
+                    razonSocial
+                }
+            `;
+            
+            const student = `
+                entity Persona {
+                    key dni
+                    nombre
+                }
+            `;
+
+            return {
+                title: "Test 1: Missing Entity",
+                description: "Student forgot to include the 'Empresa' entity",
+                errors: compareSolutions(parseERD(student), parseERD(expected))
+            };
+        }
+
+        // Test 2: Wrong entity type (weak/strong)
+        function test2() {
+            const expected = `
+                entity Departamento {
+                    key codDept
+                }
+                weak entity Empleado {
+                    partial-key numEmpleado
+                }
+                relationship pertenece {
+                    Departamento[1] -> Empleado[N]
+                }
+            `;
+            
+            const student = `
+                entity Departamento {
+                    key codDept
+                }
+                entity Empleado {
+                    partial-key numEmpleado
+                }
+                relationship pertenece {
+                    Departamento[1] -> Empleado[N]
+                }
+            `;
+
+            return {
+                title: "Test 2: Wrong Entity Type",
+                description: "Student marked strong entity instead of weak",
+                errors: compareSolutions(parseERD(student), parseERD(expected))
+            };
+        }
+
+        // Test 3: Missing/incorrect attributes
+        function test3() {
+            const expected = `
+                entity Persona {
+                    key dni
+                    nombre
+                    email //UNIQUE
+                }
+            `;
+            
+            const student = `
+                entity Persona {
+                    dni
+                    nombre
+                }
+            `;
+
+            return {
+                title: "Test 3: Attribute Errors",
+                description: "Missing key marker, missing unique attribute",
+                errors: compareSolutions(parseERD(student), parseERD(expected))
+            };
+        }
+
+        // Test 4: Specialization errors
+        function test4() {
+            const expected = `
+                entity Empleado {
+                    key dni
+                    nombre
+                }
+                //parcial,solapada
+                entity Directivo extends Empleado {
+                    nivel
+                }
+            `;
+            
+            const student = `
+                entity Empleado {
+                    key dni
+                    nombre
+                }
+                //total
+                entity Directivo extends Empleado {
+                    nivel
+                }
+            `;
+
+            return {
+                title: "Test 4: Specialization Errors",
+                description: "Wrong completeness (total instead of parcial), missing overlap",
+                errors: compareSolutions(parseERD(student), parseERD(expected))
+            };
+        }
+
+        // Test 5: Relationship link errors
+        function test5() {
+            const expected = `
+                entity Empleado { key dni }
+                entity Proyecto { key codigo }
+                relationship trabaja_en {
+                    Empleado[1..N] -> Proyecto[1..M]
+                    fecha_inicio
+                }
+            `;
+            
+            const student = `
+                entity Empleado { key dni }
+                entity Proyecto { key codigo }
+                relationship trabaja_en {
+                    Empleado[1] -> Proyecto[N]
+                }
+            `;
+
+            return {
+                title: "Test 5: Relationship Errors",
+                description: "Wrong cardinalities and missing attribute in relationship",
+                errors: compareSolutions(parseERD(student), parseERD(expected))
+            };
+        }
+
+        // Run all tests and display results
+        const tests = [test1(), test2(), test3(), test4(), test5()];
+        
+        tests.forEach(test => {
+            const section = document.createElement('div');
+            section.className = 'test-section';
+            
+            const title = document.createElement('div');
+            title.className = 'test-title';
+            title.textContent = test.title;
+            section.appendChild(title);
+            
+            const description = document.createElement('div');
+            description.className = 'observation';
+            description.textContent = test.description;
+            section.appendChild(description);
+            
+            if (test.errors.length === 0) {
+                const success = document.createElement('div');
+                success.className = 'success';
+                success.textContent = '✓ No errors found (solutions match)';
+                section.appendChild(success);
+            } else {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-list';
+                errorDiv.textContent = test.errors.join('\n\n');
+                section.appendChild(errorDiv);
+            }
+            
+            resultsDiv.appendChild(section);
+        });
+
+        // Add summary
+        const summary = document.createElement('div');
+        summary.className = 'test-section';
+        summary.innerHTML = `
+            <div class="test-title">✅ Summary</div>
+            <div class="observation">
+                All ${tests.length} test cases executed successfully.<br><br>
+                <strong>Key improvements demonstrated:</strong><br>
+                • Icons for visual categorization (❌ missing, ⚠️ incorrect, 🔢 count)<br>
+                • Specific suggestions with code examples<br>
+                • Formatted code with backticks<br>
+                • Contextual help explaining concepts<br>
+                • Clear identification of what's wrong and how to fix it
+            </div>
+        `;
+        resultsDiv.appendChild(summary);
+    </script>
+</body>
+</html>

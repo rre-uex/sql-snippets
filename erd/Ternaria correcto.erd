@@ -1,0 +1,19 @@
+erdiagram Model
+notation=crowsfoot
+
+entity PROVEEDOR {
+id_proveedor key
+}
+
+entity PROYECTO {
+id_proyecto key
+}
+
+entity REPUESTO {
+id_repuesto key
+}
+
+relationship suministra {
+PROVEEDOR[1..N] -> PROYECTO[1..N] -> REPUESTO[1..N]
+cantidad
+}

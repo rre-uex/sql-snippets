@@ -1,0 +1,172 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Planeta {
+    cod_planeta key
+    nombre
+    num_lunas
+    rotacion_horas
+    orbita_dias
+}
+
+entity Centro {
+    cod_centro key
+    nom_centro
+    coordenadas
+    fecha_creacion
+    planeta //este atributo sobra, puede ser por error G2 si no se hubiera incluido la relacion ubicadoEn o error L6 si sí se incluyó 
+}
+
+relationship esPrincipalEn {
+    Centro[1..1] ->Planeta[0..1]
+}
+
+relationship ubicadoEn {
+    Centro[1..N] ->Planeta[1..1]
+}
+
+entity ClaseMineral {
+}//M1 Dejar entidades sin ningún atributo que la describa(más allá de la clave o incluso sin ella).
+
+relationship relacionadoCon {
+    Mineral[0..N] ->Mineral[0..N]
+}
+
+relationship agrupaA {
+    Mineral[1..N] ->ClaseMineral[1..1]
+}
+
+//entity Mineral {
+//    cod_mineral key
+//    nom_mineral
+//    desc_propiedades
+//} No incluir entidades que sí son necesarias según los requisitos.
+
+relationship EncontradoPor {
+    Mineral[0..N] -> Centro[0..N]  
+    fecha_hallazgo
+}
+
+weak entity HistoricoExtraccion {
+    fecha partial-key
+    cantidad
+    attr1
+}
+
+weak relationship extraidoPor {
+    HistoricoExtraccion[0..N] -> Centro[1..1]     
+}
+
+weak relationship incluidoEn {
+    HistoricoExtraccion[0..1] -> Mineral[1..1] //M6 Indicar una cardinalidad distinta a `(0,N)` o `(1,N)` en el lado de la **entidad débil** en la relación de identificación.
+}
+
+weak entity Cargamento {
+    cod_centro partial-key //error M4 Indicar incorrectamente la clave parcial (discriminante) salvo que se dé el caso **L15**.
+    cod_cargam partial-key
+    fecha_cargam
+}
+
+weak relationship almacenadoEn {
+    Cargamento[0..N] -> Centro[1..1]     
+}
+
+relationship formaParteDe {
+    Cargamento[0..N] -> Mineral[1..N]  //L3 Indicar cardinalidades (mínima o máxima) distintas a las explícitamente requeridas salvo en los casos recogidos como fallo grave o medio.
+    cantidad   
+}
+
+entity Vehiculo {
+    matricula key
+    modelo
+}
+
+//parcial
+entity NaveEspacial extends Vehiculo{
+    matricula //L1 No indicar correctamente la clave primaria.
+    capacidad key
+}
+
+relationship asignadaA {
+   Vehiculo[1..N] -> Planeta[1..1]  
+}
+
+weak entity Vuelo {
+    fecha_ini partial-key
+    hora_ini partial-key
+    fecha_fin
+    hora_fin
+}
+
+weak relationship realizadoPor {
+    Vuelo[0..N] -> NaveEspacial[0..1] //M5 Indicar una cardinalidad distinta a `(1,1)` en el lado de la **entidad fuerte** en la relación de identificación.     
+}
+
+weak entity Dron extends Vehiculo{
+    cod_dron partial-key
+    funcion
+}//G5: Crear un subtipo que a la vez es una entidad débil de _otra_ entidad distinta (conflicto de identidad).
+
+weak relationship realizaVuelo{
+    Dron[0..N] -> Vuelo[0..1]  
+}//G5: Crear un subtipo que a la vez es una entidad débil de _otra_ entidad distinta (conflicto de identidad).
+
+relationship transportadoEn {
+   Cargamento[1..N] -> Vuelo[0..1]  
+}
+
+ relationship origenDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+
+ relationship destinoDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+
+entity Persona{
+    numPersonal key
+    nombrePersona
+    fechaAlta
+    puesto
+    pasaporte //L2: No indicar las claves alternativas (candidatas). 
+}
+
+//total,solapada
+entity Directivo extends Persona{ //L21 Indicar incorrectamente las restricciones de la jerarquía (total/parcial, disjunta/solapada).
+    numDirectivo key  //M8 Indicar claves primarias distintas en entidades de la misma jerarquía.
+    puesto //M9 Repetir atributos comunes (no clave) del supertipo en los subtipos.
+}
+
+//parcial,disjunta
+entity Astronauta extends Persona{//L21 Indicar incorrectamente las restricciones de la jerarquía (total/parcial, disjunta/solapada).
+    numPersonal key
+}
+//parcial, 
+entity Robot extends Persona{
+    numRobot key
+} // es error G3: Definir una jerarquía donde el subtipo **no "ES UN"** tipo del supertipo (relación semántica incorrecta).
+
+entity Administrativo{
+    numPersonal key
+    tipoAdministrativo
+} //es error G4: Usar una relación normal (ej: llamada "ES") cuando lo correcto es usar una jerarquía.
+
+relationship esUn{
+    Administrativo[1..1] -> Persona[1..1]
+} //es error G4: Usar una relación normal (ej: llamada "ES") cuando lo correcto es usar una jerarquía.
+
+relationship trabajaEn {
+    Persona[1..N] -> Centro[1..1]     
+}
+
+relationship coordina {
+    Persona[1..1] -> Centro[1..1] // L20 Relacionar una entidad externa con el supertipo cuando la relación era específica de un subtipo.
+    fecha_coor     
+}
+
+/* relationship pilota {
+    Astronauta[1..N] -> Vuelo[0..N]     
+} // M7 No incluir una relación requerida en el enunciado (salvo L4).  */
+
+entity Extra{   
+} //M3 Crear entidades que no son necesarias según los requisitos.

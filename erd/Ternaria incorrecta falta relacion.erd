@@ -1,0 +1,21 @@
+//- Problem in Relationship "suministra": Expected 2 links, but found 1.
+
+erdiagram Model
+notation=crowsfoot
+
+entity PROVEEDOR {
+id_proveedor key
+}
+
+entity PROYECTO {
+id_proyecto key
+}
+
+entity REPUESTO {
+id_repuesto key
+}
+
+relationship suministra {
+PROVEEDOR[1..N] -> REPUESTO[1..N] //- Problem in Relationship "suministra": Expected 2 links, but found 1.
+cantidad
+}

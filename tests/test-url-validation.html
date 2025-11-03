@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Validation Tests</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .test-case {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .link {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 3px;
+            text-decoration: none;
+            color: #333;
+            word-break: break-all;
+        }
+        .link:hover {
+            background: #e0e0e0;
+        }
+        .description {
+            color: #666;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        .expected {
+            color: #006600;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 URL Validation Test Cases</h1>
+    <p>Click on each link to test how the ERD checker handles different URL scenarios:</p>
+
+    <div class="test-case">
+        <h3>✅ Test 1: Valid URL with Correct Solution</h3>
+        <p class="description">A properly encoded ERD solution</p>
+        <a class="link" href="../erd-checker-parametrizable.html?solution=ZXJkaWFncmFtJTIwTW9kZWwlMEFub3RhdGlvbiUzRGNyb3dzZm9vdCUwQSUwQWVudGl0eSUyMFBST1ZFRURPUiUyMCU3QiUwQSUyMCUyMCUyMCUyMGNvZF9wcm92JTIwa2V5JTBBJTdEJTBBJTBBZW50aXR5JTIwUFJPWUVDVE8lMjAlN0IlMEElMjAlMjAlMjAlMjBjb2RfcHJveSUyMGtleSUwQSU3RCUwQSUwQWVudGl0eSUyMFJFUFVFU1RPJTIwJTdCJTBBJTIwJTIwJTIwJTIwY29kX3JlcCUyMGtleSUwQSU3RCUwQSUwQXJlbGF0aW9uc2hpcCUyMHN1bWluaXN0cmElMjAlN0IlMEElMjAlMjAlMjAlMjBQUk9WRUVET1IlNUIxLi5OJTVEJTIwLSUzRSUyMFBST1lFQ1RPJTVCMS4uTiU1RCUyMC0lM0UlMjBSRVBVRVNUTyU1QjEuLk4lNUQlMEElN0Q%3D" target="_blank">
+            ../erd-checker-parametrizable.html?solution=ZXJkaWFn...
+        </a>
+        <p class="expected">Expected: ✓ Solution loaded successfully!</p>
+    </div>
+
+    <div class="test-case">
+        <h3>❌ Test 2: Missing Parameter</h3>
+        <p class="description">URL without the 'solution' parameter</p>
+        <a class="link" href="../erd-checker-parametrizable.html" target="_blank">
+            ../erd-checker-parametrizable.html
+        </a>
+        <p class="expected">Expected: ❌ No solution parameter found in URL</p>
+    </div>
+
+    <div class="test-case">
+        <h3>❌ Test 3: Invalid Base64</h3>
+        <p class="description">URL with invalid base64 characters</p>
+        <a class="link" href="../erd-checker-parametrizable.html?solution=This-is-not-valid-base64!@#$" target="_blank">
+            ../erd-checker-parametrizable.html?solution=This-is-not-valid-base64!@#$
+        </a>
+        <p class="expected">Expected: ❌ Solution parameter is not valid base64</p>
+    </div>
+
+    <div class="test-case">
+        <h3>❌ Test 4: Corrupted Base64</h3>
+        <p class="description">Valid base64 characters but corrupted content</p>
+        <a class="link" href="../erd-checker-parametrizable.html?solution=QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo" target="_blank">
+            ../erd-checker-parametrizable.html?solution=QUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVo=
+        </a>
+        <p class="expected">Expected: ❌ Failed to decode the solution parameter</p>
+    </div>
+
+    <div class="test-case">
+        <h3>⚠️ Test 5: Valid Base64 but Invalid ERD Content</h3>
+        <p class="description">Properly encoded but doesn't contain ERD keywords</p>
+        <a class="link" href="../erd-checker-parametrizable.html?solution=VGhpcyUyMGlzJTIwanVzdCUyMHBsYWluJTIwdGV4dCUyQyUyMG5vdCUyMGFuJTIwRVJE" target="_blank">
+            ../erd-checker-parametrizable.html?solution=VGhpcyUyMGlzJTIw...
+        </a>
+        <p class="expected">Expected: ⚠️ Warning: Content does not appear to be a valid ERD (but allows to continue)</p>
+    </div>
+
+    <div class="test-case">
+        <h3>❌ Test 6: Empty Parameter</h3>
+        <p class="description">URL with empty solution parameter</p>
+        <a class="link" href="../erd-checker-parametrizable.html?solution=" target="_blank">
+            ../erd-checker-parametrizable.html?solution=
+        </a>
+        <p class="expected">Expected: ❌ No solution parameter found in URL</p>
+    </div>
+
+    <div class="test-case">
+        <h3>✅ Test 7: Minimal Valid ERD</h3>
+        <p class="description">Smallest possible valid ERD</p>
+        <a class="link" href="../erd-checker-parametrizable.html?solution=ZW50aXR5JTIwVGVzdCUyMCU3QiUyMGlkJTIwa2V5JTIwJTdE" target="_blank">
+            ../erd-checker-parametrizable.html?solution=ZW50aXR5JTIwVGVzdCUyMCU3QiUyMGlkJTIwa2V5JTIwJTdE
+        </a>
+        <p class="expected">Expected: ✓ Solution loaded successfully!</p>
+    </div>
+
+    <hr style="margin: 30px 0;">
+
+    <h2>🔍 How to Test</h2>
+    <ol>
+        <li>Click on each link above</li>
+        <li>Check if the page displays the expected error/success message</li>
+        <li>Verify that the "Check Solution" button is disabled for hard errors</li>
+        <li>Verify that warnings still allow checking the solution</li>
+    </ol>
+
+    <h2>📝 Expected Behaviors</h2>
+    <ul>
+        <li><strong>✓ Success (green):</strong> Valid solution loaded, button enabled</li>
+        <li><strong>⚠️ Warning (yellow):</strong> Suspicious content but button still enabled</li>
+        <li><strong>❌ Error (red):</strong> Invalid URL, button disabled</li>
+    </ul>
+
+    <script>
+        // Generate a test URL programmatically
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('URL Validation Test Page Loaded');
+            console.log('Test each link to verify validation works correctly');
+        });
+    </script>
+</body>
+</html>

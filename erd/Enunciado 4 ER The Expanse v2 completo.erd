@@ -1,0 +1,159 @@
+erdiagram Model
+notation=crowsfoot
+
+
+entity Planeta {
+    cod_planeta key
+    nombre
+    num_lunas
+    rotacion_horas
+    orbita_dias
+}
+
+
+entity Centro {
+    cod_centro key
+    nom_centro
+    coordenadas
+    fecha_creacion
+}
+
+
+relationship esPrincipalEn {
+    Centro[1..1] ->Planeta[0..1]
+}
+
+
+relationship ubicadoEn {
+    Centro[1..N] ->Planeta[1..1]
+}
+
+// Entidad ClaseMineral
+entity ClaseMineral {
+    cod_clase_mineral key
+    nom_clase_mineral
+}
+
+relationship relacionadoCon {
+    Mineral[0..N] ->Mineral[0..N]
+}
+
+relationship agrupaA {
+    Mineral[1..N] ->ClaseMineral[1..1]
+}
+
+
+// Entidad Mineral
+entity Mineral {
+    cod_mineral key
+    nom_mineral
+    desc_propiedades
+}
+
+
+relationship EncontradoPor {
+    Mineral[0..N] -> Centro[0..N]  
+    fecha_hallazgo
+}
+
+
+weak entity HistoricoExtraccion {
+    fecha partial-key
+    cantidad
+    attr1
+}
+
+weak relationship extraidoPor {
+    HistoricoExtraccion[0..N] -> Centro[1..1]     
+}
+
+weak relationship incluidoEn {
+    HistoricoExtraccion[0..N] -> Mineral[1..1] 
+}
+
+
+weak entity Cargamento {
+    cod_cargam partial-key
+    fecha_cargam
+}
+
+weak relationship almacenadoEn {
+    Cargamento[0..N] -> Centro[1..1]     
+}
+
+relationship formaParteDe {
+    Cargamento[0..N] -> Mineral[1..1]  
+    cantidad   
+}
+
+
+entity Vehiculo {
+    matricula key
+    modelo
+}
+
+//parcial
+entity NaveEspacial extends Vehiculo{
+    matricula key
+    capacidad
+}
+
+relationship asignadaA {
+   Vehiculo[1..N] -> Planeta[1..1]  
+}
+
+
+weak entity Vuelo {
+    fecha_ini partial-key
+    hora_ini partial-key
+    fecha_fin
+    hora_fin
+}
+
+weak relationship realizadoPor {
+    Vuelo[0..N] -> NaveEspacial[1..1]     
+}
+
+
+relationship transportadoEn {
+   Cargamento[1..N] -> Vuelo[0..1]  
+}
+
+ relationship origenDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+
+ relationship destinoDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+
+entity Persona{
+    numPersonal key
+    nombrePersona
+    fechaAlta
+    puesto
+    pasaporte //UNIQUE
+}
+
+//parcial,solapada
+entity Directivo extends Persona{
+    numPersonal key
+}
+
+//parcial,solapada
+entity Astronauta extends Persona{
+    numPersonal key
+}
+
+relationship trabajaEn {
+    Persona[1..N] -> Centro[1..1]     
+}
+
+relationship coordina {
+    Directivo[1..1] -> Centro[1..1]
+    fecha_coor     
+}
+
+relationship pilota {
+    Astronauta[1..N] -> Vuelo[0..N]     
+} 
