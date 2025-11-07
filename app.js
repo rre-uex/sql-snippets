@@ -1,167 +1,133 @@
 // --- 1. THE EXPECTED SOLUTION ---
-// This is the "correct answer" the student's work will be checked against.
-// You can change this string to whatever your assignment's correct solution is.
-const expectedSolutionText = `
-erdiagram Model
-notation=crowsfoot
+// This comes from the URL query string parameter 'solution' (base64 encoded)
+let expectedSolutionText = '';
 
+// --- Configuration ---
+const CONFIG = {
+    MAX_SOLUTION_SIZE: 100000, // 100KB max (encoded)
+    MAX_DECODED_SIZE: 200000,  // 200KB max (decoded)
+    isDevelopment: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+};
 
-entity Planeta {
-    cod_planeta key
-    nombre
-    num_lunas
-    rotacion_horas
-    orbita_dias
+// --- Function to get URL parameters ---
+function getUrlParameter(name) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(name);
 }
 
-
-entity Centro {
-    cod_centro key
-    nom_centro
-    coordenadas
-    fecha_creacion
+// --- Function to decode base64 ---
+function decodeBase64(str) {
+    try {
+        // Primero decodificamos de base64 a string
+        const base64Decoded = atob(str);
+        // Luego decodificamos el URI encoding
+        return decodeURIComponent(base64Decoded);
+    } catch (e) {
+        if (CONFIG.isDevelopment) {
+            console.error('Error decoding base64:', e);
+        }
+        return null;
+    }
 }
 
-
-relationship esPrincipalEn {
-    Centro[1..1] ->Planeta[0..1]
+// --- Validate ERD content ---
+function validateERDContent(content) {
+    // Check if it looks like an ERD diagram
+    const hasERDiagram = content.toLowerCase().includes('erdiagram');
+    const hasEntity = content.toLowerCase().includes('entity');
+    const hasRelationship = content.toLowerCase().includes('relationship');
+    
+    return hasERDiagram || hasEntity || hasRelationship;
 }
 
-
-relationship ubicadoEn {
-    Centro[1..N] ->Planeta[1..1]
+// --- Load expected solution from URL ---
+function loadExpectedSolution() {
+    const encodedSolution = getUrlParameter('solution');
+    
+    // Validation 1: Check if parameter exists
+    if (!encodedSolution) {
+        return {
+            success: false,
+            errorType: 'missing',
+            message: 'No solution parameter found in URL.',
+            details: 'This page requires a base64-encoded ERD solution in the URL parameter "solution".',
+            suggestion: 'Use the encode-erd.js tool to generate a valid URL or check with your instructor.'
+        };
+    }
+    
+    // Validation 2: Check parameter size (prevent DoS)
+    if (encodedSolution.length > CONFIG.MAX_SOLUTION_SIZE) {
+        return {
+            success: false,
+            errorType: 'too_large',
+            message: 'Solution parameter is too large.',
+            details: `Maximum allowed size is ${CONFIG.MAX_SOLUTION_SIZE} characters (current: ${encodedSolution.length}).`,
+            suggestion: 'The encoded solution exceeds the maximum allowed size.'
+        };
+    }
+    
+    // Validation 3: Check if it's valid base64
+    const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+    if (!base64Regex.test(encodedSolution)) {
+        return {
+            success: false,
+            errorType: 'invalid_format',
+            message: 'Solution parameter is not valid base64.',
+            details: 'The solution parameter contains invalid characters for base64 encoding.',
+            suggestion: 'Make sure the URL was copied correctly and completely.'
+        };
+    }
+    
+    // Validation 4: Try to decode
+    const decodedSolution = decodeBase64(encodedSolution);
+    
+    if (!decodedSolution) {
+        return {
+            success: false,
+            errorType: 'decode_error',
+            message: 'Failed to decode the solution parameter.',
+            details: 'The base64 decoding process failed. The parameter may be corrupted.',
+            suggestion: 'Please verify the URL was copied correctly or generate a new one.'
+        };
+    }
+    
+    // Validation 5: Check decoded size
+    if (decodedSolution.length > CONFIG.MAX_DECODED_SIZE) {
+        return {
+            success: false,
+            errorType: 'decoded_too_large',
+            message: 'Decoded solution is too large.',
+            details: `Maximum allowed size is ${CONFIG.MAX_DECODED_SIZE} characters.`,
+            suggestion: 'The solution content is too large to process.'
+        };
+    }
+    
+    // Validation 6: Check if it looks like an ERD
+    if (!validateERDContent(decodedSolution)) {
+        return {
+            success: false,
+            errorType: 'invalid_content',
+            message: 'Warning: Content does not appear to be a valid ERD.',
+            details: 'The decoded content does not contain expected ERD keywords (erdiagram, entity, relationship).',
+            suggestion: 'The solution may be encoded incorrectly. Please verify with your instructor.',
+            isWarning: true // This is a warning, not a hard error
+        };
+    }
+    
+    // All validations passed!
+    expectedSolutionText = decodedSolution;
+    
+    if (CONFIG.isDevelopment) {
+        console.log('Expected solution decoded successfully:', expectedSolutionText.substring(0, 100) + '...');
+        console.log('Solution length:', decodedSolution.length, 'characters');
+    }
+    
+    return {
+        success: true,
+        message: 'Expected solution loaded successfully!',
+        details: `Loaded ${decodedSolution.length} characters.`
+    };
 }
-
-// Entidad ClaseMineral
-entity ClaseMineral {
-    cod_clase_mineral key
-    nom_clase_mineral
-}
-
-relationship relacionadoCon {
-    Mineral[0..N] ->Mineral[0..N]
-}
-
-relationship agrupaA {
-    Mineral[1..N] ->ClaseMineral[1..1]
-}
-
-
-// Entidad Mineral
-entity Mineral {
-    cod_mineral key
-    nom_mineral
-    desc_propiedades
-}
-
-
-relationship EncontradoPor {
-    Mineral[0..N] -> Centro[0..N]  
-    fecha_hallazgo
-}
-
-
-weak entity HistoricoExtraccion {
-    fecha partial-key
-    cantidad
-    attr1
-}
-
-weak relationship extraidoPor {
-    HistoricoExtraccion[0..N] -> Centro[1..1]     
-}
-
-weak relationship incluidoEn {
-    HistoricoExtraccion[0..N] -> Mineral[1..1] 
-}
-
-
-weak entity Cargamento {
-    cod_cargam partial-key
-    fecha_cargam
-}
-
-weak relationship almacenadoEn {
-    Cargamento[0..N] -> Centro[1..1]     
-}
-
-relationship formaParteDe {
-    Cargamento[0..N] -> Mineral[1..1]  
-    cantidad   
-}
-
-
-entity Vehiculo {
-    matricula key
-    modelo
-}
-
-entity NaveEspacial extends Vehiculo{
-    matricula key
-    capacidad
-}
-
-relationship asignadaA {
-   Vehiculo[1..N] -> Planeta[1..1]  
-}
-
-
-weak entity Vuelo {
-    fecha_ini partial-key
-    hora_ini partial-key
-    fecha_fin
-    hora_fin
-}
-
-weak relationship realizadoPor {
-    Vuelo[0..N] -> NaveEspacial[1..1]     
-}
-
-
-relationship transportadoEn {
-   Cargamento[1..N] -> Vuelo[0..1]  
-}
-
- relationship origenDe {
-    Vuelo[0..N] -> Centro[1..1]     
-}
-
- relationship destinoDe {
-    Vuelo[0..N] -> Centro[1..1]     
-}
-
-entity Persona{
-    numPersonal key
-    nombrePersona
-    fechaAlta
-    puesto
-    pasaporte //UNIQUE
-}
-
-//parcial,solapada
-entity Directivo extends Persona{
-    numPersonal key
-}
-
-//parcial,solapada
-entity Astronauta extends Persona{
-    numPersonal key
-}
-
-relationship trabajaEn {
-    Persona[1..N] -> Centro[1..1]     
-}
-
-relationship coordina {
-    Directivo[1..1] -> Centro[1..1]
-    fecha_coor     
-}
-
-relationship pilota {
-    Astronauta[1..N] -> Vuelo[0..N]     
-}
-
-`;
 
 // --- 2. THE PARSER ---
 // This function converts the ERD text into a structured object.
@@ -497,8 +463,81 @@ function compareSolutions(student, expected) {
 // This code runs when the page is loaded.
 document.addEventListener('DOMContentLoaded', () => {
     const studentTextArea = document.getElementById('studentSolution');
-    const compareButton = document.getElementById('compareBtn');
+    const checkButton = document.getElementById('checkBtn');
+    const submitButton = document.getElementById('submitBtn');
     const resultsDiv = document.getElementById('results');
+    const loadStatusDiv = document.getElementById('loadStatus');
+
+    // --- Helper function to display load status ---
+    function displayLoadStatus(result) {
+        loadStatusDiv.innerHTML = ''; // Clear previous content
+        
+        if (!result.success) {
+            // Error display
+            const icon = result.isWarning ? '⚠️' : '❌';
+            const title = document.createElement('div');
+            title.style.fontWeight = 'bold';
+            title.style.marginBottom = '8px';
+            title.textContent = `${icon} ${result.message}`;
+            
+            const details = document.createElement('div');
+            details.style.fontSize = '13px';
+            details.style.marginTop = '4px';
+            details.textContent = result.details || '';
+            
+            if (result.suggestion) {
+                const suggestion = document.createElement('div');
+                suggestion.style.fontSize = '13px';
+                suggestion.style.marginTop = '8px';
+                suggestion.style.paddingTop = '8px';
+                suggestion.style.borderTop = '1px solid #ccc';
+                suggestion.innerHTML = `<strong>Suggestion:</strong> ${result.suggestion}`;
+                loadStatusDiv.appendChild(title);
+                loadStatusDiv.appendChild(details);
+                loadStatusDiv.appendChild(suggestion);
+            } else {
+                loadStatusDiv.appendChild(title);
+                loadStatusDiv.appendChild(details);
+            }
+            
+            loadStatusDiv.className = result.isWarning ? 'warning' : 'error';
+            
+            // Disable button if it's a hard error (not just a warning)
+            if (!result.isWarning) {
+                //checkButton.disabled = true;
+                submitButton.disabled = true;
+            }
+        } else {
+            // Success display
+            const icon = '✓';
+            const title = document.createElement('div');
+            title.style.fontWeight = 'bold';
+            title.textContent = `${icon} ${result.message}`;
+            
+            if (result.details) {
+                const details = document.createElement('div');
+                details.style.fontSize = '13px';
+                details.style.marginTop = '4px';
+                details.style.opacity = '0.8';
+                details.textContent = result.details;
+                loadStatusDiv.appendChild(title);
+                loadStatusDiv.appendChild(details);
+            } else {
+                loadStatusDiv.appendChild(title);
+            }
+            
+            loadStatusDiv.className = 'success';
+        }
+    }
+
+    // --- Load expected solution from URL ---
+    const loadResult = loadExpectedSolution();
+    displayLoadStatus(loadResult);
+    
+    // Stop here if loading failed (and it's not just a warning)
+    if (!loadResult.success && !loadResult.isWarning) {
+        return;
+    }
 
     // --- Initialize CodeMirror with ERD syntax highlighting ---
     // Define custom ERD mode
@@ -537,13 +576,14 @@ document.addEventListener('DOMContentLoaded', () => {
         indentWithTabs: false
     });
 
-    // --- Handle the button click ---
-    compareButton.addEventListener('click', () => {
+    // --- Handle the Check button click ---
+    checkButton.addEventListener('click', () => {
         // 1. Get student's text from CodeMirror editor
         const studentText = editor.getValue();
         if (!studentText) {
             resultsDiv.textContent = 'Please enter your solution first.';
             resultsDiv.className = 'error';
+            submitButton.disabled = true;
             return;
         }
 
@@ -552,23 +592,39 @@ document.addEventListener('DOMContentLoaded', () => {
             const studentERD = parseERD(studentText);
             const expectedERD = parseERD(expectedSolutionText);
 
+            if (CONFIG.isDevelopment) {
+                console.log('Student ERD:', studentERD);
+                console.log('Expected ERD:', expectedERD);
+            }
+
             // 3. Compare them
             const errors = compareSolutions(studentERD, expectedERD);
 
-            // 4. Display results
+            // 4. Display results and enable/disable Submit button
             if (errors.length === 0) {
-                resultsDiv.textContent = 'Solution is correct! Great job!';
+                resultsDiv.textContent = '✓ Solution is correct! Great job!';
                 resultsDiv.className = 'success';
+                submitButton.disabled = false; // Enable submit button on success
             } else {
                 resultsDiv.textContent = 'Found some issues:\n\n- ' + errors.join('\n- ');
                 resultsDiv.className = 'error';
+                submitButton.disabled = true; // Keep submit button disabled on error
             }
 
         } catch (e) {
             // Handle any parsing errors
-            console.error(e);
-            resultsDiv.textContent = 'Error: ' + e.message;
+            if (CONFIG.isDevelopment) {
+                console.error('Parsing error:', e);
+            }
+            resultsDiv.textContent = '❌ Error parsing your solution:\n\n' + e.message + '\n\nPlease check your ERD syntax.';
             resultsDiv.className = 'error';
+            submitButton.disabled = true; // Keep submit button disabled on error
         }
+    });
+
+    // --- Handle the Submit button click ---
+    submitButton.addEventListener('click', () => {
+        // TODO: Implement submit functionality (e.g., send to server, download, etc.)
+        alert('Submit functionality will be implemented here.');
     });
 });

@@ -3,99 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERD Solution Checker</title>
+    <title>ERD Checker</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="erd-checker.css">
     
     <!-- CodeMirror CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
-    
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f7f6;
-        }
-        main {
-            max-width: 900px;
-            margin: 0 auto;
-            background: #ffffff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-        h1 {
-            color: #333;
-            text-align: center;
-        }
-        textarea {
-            width: 98%;
-            height: 250px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            margin-top: 10px;
-        }
-        .CodeMirror {
-            height: 300px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-        button {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #fff;
-            background-color: #007bff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #results {
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 4px;
-            font-family: 'Courier New', Courier, monospace;
-            white-space: pre-wrap; /* Allows text to wrap */
-        }
-        .success {
-            background-color: #e6ffed;
-            border: 1px solid #b7ebc9;
-            color: #257942;
-        }
-        .error {
-            background-color: #ffebe6;
-            border: 1px solid #ffc5b3;
-            color: #c0392b;
-        }
-    </style>
 </head>
 <body>
+    <div class="toolbar">
+        <h1>ERD Checker</h1>
+        <div class="toolbar-controls">
+            <button id="checkBtn">Check</button>
+            <button id="submitBtn" disabled>Submit</button>
+        </div>
+    </div>
+    
     <main>
-        <h1>ERD Solution Checker</h1>
-        <p>Enter your ERD solution in the text area below using bigER notation.</p>
+        <div id="loadStatus"></div>
         
-        <label for="studentSolution"><b>Your Solution:</b></label>
+        <p class="description">Enter your ERD solution in the text area below using bigER notation.</p>
+                
         <textarea id="studentSolution" placeholder="entity Student { ... }"></textarea>
 
-        <button id="compareBtn">Check Solution</button>
-
         <div id="results"></div>
+        
     </main>
     
     <!-- CodeMirror JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/mode/simple.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/mode/simple.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
     
     <script src="app.js"></script>

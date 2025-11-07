@@ -4,7 +4,7 @@
  * Este test verifica que el proceso completo funciona:
  * 1. Leer archivo .erd
  * 2. Codificar a base64 (como encode-erd.js)
- * 3. Decodificar (como appParametrizable.js)
+ * 3. Decodificar (como app.js)
  * 4. Comparar soluciones (validación)
  */
 
@@ -343,7 +343,7 @@ function encodeToBase64(text) {
     return Buffer.from(encodeURIComponent(text)).toString('base64');
 }
 
-// Función de decodificación (como appParametrizable.js - VERSIÓN CORREGIDA)
+// Función de decodificación (como app.js - VERSIÓN CORREGIDA)
 function decodeFromBase64(base64Str) {
     return decodeURIComponent(atob(base64Str));
 }
@@ -446,7 +446,7 @@ tests.forEach((test, index) => {
         const encoded = encodeToBase64(correctContent);
         console.log(`  📦 Codificado a base64: ${encoded.length} caracteres`);
         
-        // 3. Decodificar (simula appParametrizable.js)
+        // 3. Decodificar (simula app.js)
         const decoded = decodeFromBase64(encoded);
         console.log(`  📂 Decodificado: ${decoded.length} caracteres`);
         

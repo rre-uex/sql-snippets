@@ -114,7 +114,7 @@ function main() {
     const result = encodeERD(filePath);
     
     // Build URLs
-    const relativeUrl = `erd-checker-parametrizable.html?solution=${result.encoded}`;
+    const relativeUrl = `erd-checker.html?solution=${result.encoded}`;
     const fullUrl = `http://localhost:8080/${relativeUrl}`;
     
     // Display results

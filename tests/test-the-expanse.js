@@ -2,9 +2,9 @@
  * Test Suite for ERD Checker - The Expanse Tests
  * 
  * This test file validates that the ERD checker correctly identifies
- * correct and incorrect ERD diagrams for The Expanse domain (complex scenario).
+ * correct and incorrect ERD diagrams for The Expanse domain.
  * 
- * Uses the REAL parser from appParametrizable.js to ensure consistency
+ * Uses the REAL parser from app.js to ensure consistency
  * with the actual application.
  */
 
@@ -12,9 +12,9 @@ const fs = require('fs');
 const path = require('path');
 
 // ============================================================================
-// Import REAL parser from appParametrizable.js
+// Import REAL parser from app.js
 // ============================================================================
-const appCode = fs.readFileSync(path.join(__dirname, '../appParametrizable.js'), 'utf8');
+const appCode = fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8');
 
 // Extract parseERD function (complete implementation)
 const parseERDStart = appCode.indexOf('function parseERD(text) {');
