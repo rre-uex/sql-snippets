@@ -42,16 +42,17 @@ function validateERDContent(content) {
 
 // --- Load expected solution from URL ---
 function loadExpectedSolution() {
-    const encodedSolution = getUrlParameter('solution');
+    const encodedSolution = getUrlParameter('s');
     
     // Validation 1: Check if parameter exists
     if (!encodedSolution) {
         return {
             success: false,
             errorType: 'missing',
-            message: 'No solution parameter found in URL.',
-            details: 'This page requires a base64-encoded ERD solution in the URL parameter "solution".',
-            suggestion: 'Use the encode-erd.js tool to generate a valid URL or check with your instructor.'
+            message: 'No expected parameter found in URL.',
+            details: 'This page requires a URL parameter.',
+      //      details: 'This page requires a base64-encoded ERD solution in the URL parameter "solution".',
+            suggestion: 'Provide a valid URL.'
         };
     }
     
@@ -60,9 +61,9 @@ function loadExpectedSolution() {
         return {
             success: false,
             errorType: 'too_large',
-            message: 'Solution parameter is too large.',
+            message: 'Parameter is too large.',
             details: `Maximum allowed size is ${CONFIG.MAX_SOLUTION_SIZE} characters (current: ${encodedSolution.length}).`,
-            suggestion: 'The encoded solution exceeds the maximum allowed size.'
+            suggestion: 'The encoded parameter exceeds the maximum allowed size.'
         };
     }
     
@@ -72,9 +73,9 @@ function loadExpectedSolution() {
         return {
             success: false,
             errorType: 'invalid_format',
-            message: 'Solution parameter is not valid base64.',
-            details: 'The solution parameter contains invalid characters for base64 encoding.',
-            suggestion: 'Make sure the URL was copied correctly and completely.'
+            message: 'The parameter is not valid base64.',
+            details: 'The parameter contains invalid characters for base64 encoding.',
+            suggestion: 'Make sure the URL was correct.'
         };
     }
     
@@ -85,9 +86,9 @@ function loadExpectedSolution() {
         return {
             success: false,
             errorType: 'decode_error',
-            message: 'Failed to decode the solution parameter.',
+            message: 'Failed to decode the parameter.',
             details: 'The base64 decoding process failed. The parameter may be corrupted.',
-            suggestion: 'Please verify the URL was copied correctly or generate a new one.'
+            suggestion: 'Please verify the URL was correct.'
         };
     }
     
@@ -107,9 +108,9 @@ function loadExpectedSolution() {
         return {
             success: false,
             errorType: 'invalid_content',
-            message: 'Warning: Content does not appear to be a valid ERD.',
-            details: 'The decoded content does not contain expected ERD keywords (erdiagram, entity, relationship).',
-            suggestion: 'The solution may be encoded incorrectly. Please verify with your instructor.',
+            message: 'Warning: Content does not appear to be valid.',
+            details: 'The decoded content does not contain expected keywords.',
+            suggestion: 'The content may be encoded incorrectly.',
             isWarning: true // This is a warning, not a hard error
         };
     }
@@ -473,6 +474,10 @@ document.addEventListener('DOMContentLoaded', () => {
         loadStatusDiv.innerHTML = ''; // Clear previous content
         
         if (!result.success) {
+            // Hide controls
+            studentTextArea.style.display = 'none';
+            checkButton.disabled = true;
+            submitButton.disabled = true;
             // Error display
             const icon = result.isWarning ? '⚠️' : '❌';
             const title = document.createElement('div');
@@ -507,7 +512,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 //checkButton.disabled = true;
                 submitButton.disabled = true;
             }
-        } else {
+        } 
+        /*
+        else {
             // Success display
             const icon = '✓';
             const title = document.createElement('div');
@@ -527,7 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             loadStatusDiv.className = 'success';
-        }
+        } */
     }
 
     // --- Load expected solution from URL ---
