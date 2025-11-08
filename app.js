@@ -546,6 +546,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+//Get the message from iframe document
+    window.addEventListener('message', function (event) {
+        console.log('Message received: ', event.data);
+        // Very important: check the origin of the message in production!
+        if (event.origin !== 'https://campusvirtual.unex.es') return;
+
+        if (event.source === this.window.parent) {
+            console.log('Parent received message:', event.data);
+
+            const submitBt = document.getElementById("submitBtn");
+            submitBt.hidden = false;//event.data;
+        }
+    });
+
+    //ping the window.parent in case loaded in a iframe    
+    const message = { type: 'ping' };
+    window.parent.postMessage(message, '*');
+
     // --- Initialize CodeMirror with ERD syntax highlighting ---
     // Define custom ERD mode
     CodeMirror.defineSimpleMode("erd", {
@@ -631,7 +649,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Handle the Submit button click ---
     submitButton.addEventListener('click', () => {
-        // TODO: Implement submit functionality (e.g., send to server, download, etc.)
-        alert('Submit functionality will be implemented here.');
+        
+        const hash = CryptoJS.MD5(expectedSolutionText.trim()).toString(); // Calculate MD5 hash
+        console.log("MD5 Hash of Solution:", hash); // Log the hash
+        //console.log(tableString.trim()); // Log the hash
+        const message = { type: 'md5', hash: hash };
+        window.parent.postMessage(message, 'https://campusvirtual.unex.es'); //Send MD5 hash to parent window
     });
 });

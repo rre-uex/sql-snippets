@@ -11,13 +11,15 @@
     <!-- CodeMirror CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 </head>
 <body>
     <div class="toolbar">
         <h1>ERD Checker</h1>
         <div class="toolbar-controls">
             <button id="checkBtn">Check</button>
-            <button id="submitBtn" disabled>Submit</button>
+            <button id="submitBtn" disabled hidden>Submit</button>
         </div>
     </div>
     
