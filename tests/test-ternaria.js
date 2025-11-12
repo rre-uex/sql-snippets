@@ -108,9 +108,9 @@ function runTest(testName, expectedSolution, studentSolution, shouldPass = false
 // Test Data
 // ============================================================================
 
-const ternaria_correcto = fs.readFileSync(path.join(__dirname, '../erd/Ternaria correcto.erd'), 'utf8');
-const ternaria_incorrecta_cardinalidades = fs.readFileSync(path.join(__dirname, '../erd/Ternaria incorrecta cardinalidades incorrectas.erd'), 'utf8');
-const ternaria_incorrecta_falta_relacion = fs.readFileSync(path.join(__dirname, '../erd/Ternaria incorrecta falta relacion.erd'), 'utf8');
+const ternaria_correcto = fs.readFileSync(path.join(__dirname, '../erd/Teoria/Ternarias/Ternaria correcto.erd'), 'utf8');
+const ternaria_incorrecta_cardinalidades = fs.readFileSync(path.join(__dirname, '../erd/Teoria/Ternarias/Ternaria incorrecta cardinalidades incorrectas.erd'), 'utf8');
+const ternaria_incorrecta_falta_relacion = fs.readFileSync(path.join(__dirname, '../erd/Teoria/Ternarias/Ternaria incorrecta falta relacion.erd'), 'utf8');
 
 // ============================================================================
 // Test Cases

@@ -1,0 +1,39 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Superheroe {
+    nombreSuperheroe key  
+    fecha
+}
+
+entity Planeta {
+    cod_planeta key  
+    nombrePlaneta
+    sistema_planetario
+    coordenadas
+}
+
+relationship procede {
+    Superheroe[0..N] -> Planeta[0..1]
+}
+
+entity Superpoder {
+    cod_superpoder key  
+    descripcion
+}
+
+relationship posee {
+    Superheroe[0..N] -> Superpoder[1..N]  
+    nivel
+}
+
+relationship coordina {
+    Superheroe[0..1] -> Planeta[0..1] 
+    fecha_inicio
+}
+
+relationship responsableDe {
+    Superheroe[0..1 | "Superior" ] -> Superheroe[0..N | "Subordinado"] 
+}
+
+

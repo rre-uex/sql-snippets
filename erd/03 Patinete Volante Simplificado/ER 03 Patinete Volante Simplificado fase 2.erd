@@ -1,0 +1,38 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Patinete {
+    matricula key
+    marca
+    modelo
+    fechaCompra
+    fechaUltimaRevision
+    precio_minuto
+    estado
+}
+
+entity Zona {
+    idZona key
+    nombreZona
+    habitantesZona
+    maxPatZona
+    tarifaZona
+}
+
+relationship asignadoA {
+    Patinete[1..N] -> Zona[1..1]
+}   
+
+relationship circulaPor {
+    Patinete[1..N] -> Zona[1..N]
+}   
+
+weak entity PuntoAparcamiento {
+    numPunto partial-key
+    direccion
+    capacidad
+}
+
+weak relationship disponeDe {
+    Zona[1..1] -> PuntoAparcamiento[1..N]
+}

@@ -1,0 +1,66 @@
+erdiagram Model
+
+notation=crowsfoot
+
+entity PersonaUEX {
+nif key
+}
+
+//total,solapada
+entity Empleado extends  PersonaUEX {
+nif key
+}
+
+//total, solapada
+entity Estudiante extends  PersonaUEX {
+nif key
+}
+
+//total,solapada
+entity Docente extends  Empleado {
+nif key
+}
+//total,solapada
+entity PTGAS extends Empleado {
+nif key
+}
+
+//parcial,disjunta
+entity Catedratico extends  Docente {
+nif key
+}
+
+//parcial,disjunta
+entity Titular extends  Docente {
+nif key
+}
+
+//parcial
+entity EstudiantePolitecnica extends  Estudiante {
+nif key
+}
+
+//total,disjunta
+entity MayorDeEdad extends  EstudiantePolitecnica {
+nif key
+}
+
+//total,disjunta
+entity MenorDeEdad extends  EstudiantePolitecnica {
+nif key
+}
+
+//parcial,solapada
+entity EstudianteInformatica extends  EstudiantePolitecnica {
+nif key
+}
+
+//parcial,solapada
+entity EstudianteCivil extends  EstudiantePolitecnica {
+nif key
+}
+
+//parcial,solapada
+entity EstudianteEdificacion extends  EstudiantePolitecnica {
+nif key
+}

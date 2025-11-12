@@ -1,0 +1,88 @@
+erdiagram Expanse01
+notation=crowsfoot
+
+entity Planeta { 
+codPlaneta key 
+nombre
+numLunas 
+rotacionHoras
+orbitaDias
+} 
+
+entity Centro { 
+codCentro key 
+nomCentro 
+coordenadas 
+fechaCreacion
+} 
+
+entity Mineral { 
+codMineral key
+nomMineral 
+descPropiedades
+} 
+
+entity NaveEspacial { 
+matricula key
+modelo 
+capacidad 
+}
+
+relationship ubicadoEn {
+    Centro[1..N] ->Planeta[1..1]
+}
+
+relationship esPrincipalEn {
+    Centro[1..1] ->Planeta[0..1]
+}
+
+relationship encontradoPor {
+    Mineral[0..N] -> Centro[0..N]  
+    fechaHallazgo
+}
+relationship asignadaA {
+   NaveEspacial[0..N] -> Planeta[1..1]  
+}
+
+weak entity Vuelo {
+    fechaIni partial-key
+    horaIni partial-key
+    fechaFin
+    horaFin
+}
+
+weak relationship realizadoPor {
+    Vuelo[0..N] -> NaveEspacial[1..1]     
+}
+
+relationship origenDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+ relationship destinoDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+
+weak entity Cargamento {
+    codCargam partial-key
+    fechaCargam
+}
+
+weak relationship almacenadoEn {
+    Cargamento[0..N] -> Centro[1..1]     
+}
+
+relationship formaParteDe {
+    Cargamento[0..N] -> Mineral[1..1]  
+    cantidad   
+}
+
+relationship transportadoEn {
+   Cargamento[1..N] -> Vuelo[0..1]  
+}
+
+
+
+
+
+
+

@@ -104,8 +104,8 @@ function runTest(testName, expectedSolution, studentSolution, shouldPass = false
 // Test Data
 // ============================================================================
 
-const superheroes_completo = fs.readFileSync(path.join(__dirname, '../erd/Enunciado 1 ER Superhéroesv1 completo.erd'), 'utf8');
-const superheroes_incorrecto = fs.readFileSync(path.join(__dirname, '../erd/Enunciado 1 ER Superhéroesv1 incorrecto.erd'), 'utf8');
+const superheroes_completo = fs.readFileSync(path.join(__dirname, '../erd/01 Superheroes/ER 01 Superheroes final.erd'), 'utf8');
+const superheroes_incorrecto = fs.readFileSync(path.join(__dirname, '../erd/01 Superheroes/ER 01 Superheroes incorrecto.erd'), 'utf8');
 
 // ============================================================================
 // Test Cases

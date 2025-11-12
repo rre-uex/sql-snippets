@@ -1,0 +1,19 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Superheroe {
+    nombreSuperheroe key  
+    fecha
+}
+
+entity Planeta {
+    cod_planeta key  
+    nombrePlaneta
+    sistema_planetario
+    coordenadas
+}
+
+relationship procede {
+    Superheroe[0..N] -> Planeta[0..1]
+}
+

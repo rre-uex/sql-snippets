@@ -1,0 +1,145 @@
+erdiagram Expanse01
+notation=crowsfoot
+
+entity Planeta { 
+codPlaneta key 
+nombre
+numLunas 
+rotacionHoras
+orbitaDias
+} 
+
+entity Centro { 
+codCentro key 
+nomCentro 
+coordenadas 
+fechaCreacion
+} 
+
+entity Mineral { 
+codMineral key
+nomMineral 
+descPropiedades
+} 
+
+//parcial
+entity NaveEspacial extends Vehiculo{
+matricula key
+capacidad 
+}
+
+relationship ubicadoEn {
+    Centro[1..N] ->Planeta[1..1]
+}
+
+relationship esPrincipalEn {
+    Centro[1..1] ->Planeta[0..1]
+}
+
+relationship encontradoPor {
+    Mineral[0..N] -> Centro[0..N]  
+    fechaHallazgo
+}
+
+weak entity Vuelo {
+    fechaIni partial-key
+    horaIni partial-key
+    fechaFin
+    horaFin
+}
+
+weak relationship realizadoPor {
+    Vuelo[0..N] -> NaveEspacial[1..1]     
+}
+
+relationship origenDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+ relationship destinoDe {
+    Vuelo[0..N] -> Centro[1..1]     
+}
+
+
+weak entity Cargamento {
+    codCargam partial-key
+    fechaCargam
+}
+
+weak relationship almacenadoEn {
+    Cargamento[0..N] -> Centro[1..1]     
+}
+
+relationship formaParteDe {
+    Cargamento[0..N] -> Mineral[1..1]  
+    cantidad   
+}
+
+relationship transportadoEn {
+   Cargamento[1..N] -> Vuelo[0..1]  
+}
+
+weak entity HistoricoExtraccion {
+    fecha partial-key
+    cantidad
+}
+
+weak relationship incluidoEn {
+    HistoricoExtraccion[0..N] -> Mineral[1..1] 
+}
+
+weak relationship extraidoPor {
+    HistoricoExtraccion[0..N] -> Centro[1..1]     
+}
+
+entity Clase_Mineral {
+    cod_clase_mineral key
+    nombre_clase_mineral
+}
+
+relationship agrupaA {
+    Mineral[1..N] ->Clase_Mineral[1..1]
+}
+
+relationship relacionadoCon {
+    Mineral[0..N | "Mineral_A"] -> Mineral[0..N | "Mineral_B"]
+}
+
+entity Vehiculo {
+    matricula key
+    modelo
+}
+
+relationship asignadaA {
+   Vehiculo[0..N] -> Planeta[1..1]  
+}
+
+entity Personal{
+    numero_personal key
+    pasaporte //UNIQUE
+    nombre_completo
+    fecha_alta
+    puesto    
+}
+
+//parcial,disjunta
+entity Directivo extends Personal{
+    numero_personal key
+}
+
+//parcial,disjunta
+entity Astronauta extends Personal{
+    numero_personal key
+}
+
+relationship trabajaEn {
+    Personal[1..N] -> Centro[1..1]     
+}
+
+relationship coordina {
+    Directivo[1..1] -> Centro[1..1]
+    fecha_inicio    
+}
+
+relationship pilota {
+    Astronauta[1..N] -> Vuelo[1..N]     
+} 

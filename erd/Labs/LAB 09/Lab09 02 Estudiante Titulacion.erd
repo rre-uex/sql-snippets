@@ -1,0 +1,19 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Estudiante {  
+numExpediente key
+nombre  
+apellido1  
+apellido2  
+}
+
+entity Titulacion {
+codTitulacion key
+nombre
+}
+
+relationship matriculadoEn {
+Estudiante[1..N] -> Titulacion[1..1]
+fechaMatriculacion
+}

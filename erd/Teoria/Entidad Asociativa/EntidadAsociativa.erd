@@ -1,0 +1,39 @@
+erdiagram Model
+notation=crowsfoot
+
+entity PUESTO_DE_TRABAJO {
+    id_puesto key
+    nombre_puesto
+}
+
+entity COMPETENCIA {
+    id_competencia key
+    nombre_competencia
+}
+
+entity VALIDADOR {
+    id_validador key
+    rol_empresa
+}
+
+// Entidad asociativa que "cosifica" la relación M:N
+// Su clave primaria es la combinación de id_puesto e id_competencia
+entity ASOC_REQUISITO_DE_PUESTO {
+id_puesto key
+id_competencia key
+}
+
+// Relaciones que forman la entidad asociativa
+relationship requiere {
+    PUESTO_DE_TRABAJO[1..1] -> ASOC_REQUISITO_DE_PUESTO[1..N]
+}
+
+relationship es_requerida_por {
+    COMPETENCIA[1..1] -> ASOC_REQUISITO_DE_PUESTO[1..N]
+}
+
+// La entidad asociativa ahora puede relacionarse con otras entidades
+
+relationship validada_por {
+    ASOC_REQUISITO_DE_PUESTO[0..N] -> VALIDADOR[1..1]
+}

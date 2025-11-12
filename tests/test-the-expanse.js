@@ -104,8 +104,8 @@ function runTest(testName, expectedSolution, studentSolution, shouldPass = false
 // Test Data
 // ============================================================================
 
-const expanse_completo = fs.readFileSync(path.join(__dirname, '../erd/Enunciado 4 ER The Expanse v2 completo.erd'), 'utf8');
-const expanse_incorrecto = fs.readFileSync(path.join(__dirname, '../erd/Enunciado 4 ER The Expanse v2 incorrecto.erd'), 'utf8');
+const expanse_completo = fs.readFileSync(path.join(__dirname, '../erd/04 The Expanse Completo/ER 04 The Expanse Completo final.erd'), 'utf8');
+const expanse_incorrecto = fs.readFileSync(path.join(__dirname, '../erd/04 The Expanse Completo/ER 04 The Expanse Completo incorrecto.erd'), 'utf8');
 
 // ============================================================================
 // Test Cases

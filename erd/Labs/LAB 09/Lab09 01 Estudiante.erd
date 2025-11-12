@@ -1,0 +1,9 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Estudiante {  
+numExpediente key
+nombre  
+apellido1  
+apellido2  
+}

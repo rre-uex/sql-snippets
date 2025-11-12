@@ -1,0 +1,29 @@
+erdiagram Expanse01
+notation=crowsfoot
+
+entity Planeta { 
+codPlaneta key 
+nombre
+numLunas 
+rotacionHoras
+orbitaDias
+} 
+
+entity Centro { 
+codCentro key 
+nomCentro 
+coordenadas 
+fechaCreacion
+} 
+
+entity Mineral { 
+codMineral key
+nomMineral 
+descPropiedades
+} 
+
+entity NaveEspacial { 
+matricula key
+modelo 
+capacidad 
+}

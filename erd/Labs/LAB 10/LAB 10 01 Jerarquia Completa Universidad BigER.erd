@@ -1,0 +1,21 @@
+erdiagram Model
+
+notation=crowsfoot
+
+entity PersonaUEX {
+nif key
+}
+
+//total,solapada
+entity Empleado extends  PersonaUEX {
+nif key
+}
+
+//total, solapada
+entity Estudiante extends  PersonaUEX {
+nif key
+}
+
+
+
+

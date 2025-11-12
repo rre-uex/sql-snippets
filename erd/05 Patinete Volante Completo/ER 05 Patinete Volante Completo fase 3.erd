@@ -1,0 +1,123 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Patinete {
+    matricula key
+    marca
+    modelo
+    fechaCompra
+    fechaUltimaRevision
+    precio_minuto
+    estado
+}
+
+entity Zona {
+    idZona key
+    nombreZona
+    habitantesZona
+    maxPatZona
+    tarifaZona
+}
+
+relationship asignadoA {
+    Patinete[1..N] -> Zona[1..1]
+}   
+
+relationship circulaPor {
+    Patinete[1..N] -> Zona[1..N]
+}   
+
+weak entity PuntoAparcamiento {
+    numPunto partial-key
+    direccion
+    capacidad
+}
+
+weak relationship disponeDe {
+    Zona[1..1] -> PuntoAparcamiento[1..N]
+}
+
+weak entity Alquiler {
+    fec_ini_alquiler partial-key
+    hora_ini_alquiler partial-key
+    hora_fin_alquiler 
+}
+
+weak relationship usadoEn {
+    Alquiler[0..N] -> Patinete[1..1]
+}
+
+relationship realizadoPor {
+   Alquiler[0..N] -> Usuario[1..1] 
+}
+relationship seInicioEn {
+    Alquiler[0..N] -> PuntoAparcamiento[1..1]
+}
+
+relationship terminoEn {
+    Alquiler[0..N] -> PuntoAparcamiento[0..1]
+}
+
+entity Incidencia {
+    idIncidencia key
+    descripcion
+    fechaIncidencia
+    horaIncidencia
+    coordenadas
+}
+
+relationship afectaA {
+    Incidencia[0..N] -> Patinete[1..1]
+}
+
+entity Persona{
+    codigo_usuario key
+    dni //UNIQUE
+    nombre
+    apellido1
+    apellido2
+    telefono
+}
+
+//total,solapada
+entity Usuario extends Persona{
+    codigo_usuario key
+    email
+    tarjetaCredito
+}
+
+//total,solapada
+entity Empleado extends Persona{
+    codigo_usuario key
+    num_seg_social //UNIQUE
+    categoria
+}
+
+relationship responsableDe {
+    Empleado[1..1] -> Zona[0..1]     
+}
+
+relationship notificadaPor {
+    Incidencia[0..N] -> Persona[1..1] 
+}
+
+relationship tramitadaPor {
+    Empleado[1..1] -> Incidencia[0..N]     
+}
+
+relationship daLugarA {
+    Incidencia[0..1 | "Causante"] -> Incidencia[0..N | "Consecuencia"]
+}
+
+weak entity Revision {
+    fechaRevision partial-key
+    informeRevision
+}
+
+weak relationship sufridaPor {
+    Revision[0..N] -> Patinete[1..1]
+}
+
+relationship realizadaPor {
+    Revision[0..N] -> Empleado[1..N]
+}

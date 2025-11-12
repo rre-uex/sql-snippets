@@ -1,0 +1,45 @@
+erdiagram Expanse01
+notation=crowsfoot
+
+entity Planeta { 
+codPlaneta key 
+nombre
+numLunas 
+rotacionHoras
+orbitaDias
+} 
+
+entity Centro { 
+codCentro key 
+nomCentro 
+coordenadas 
+fechaCreacion
+} 
+
+entity Mineral { 
+codMineral key
+nomMineral 
+descPropiedades
+} 
+
+entity NaveEspacial { 
+matricula key
+modelo 
+capacidad 
+}
+
+relationship ubicadoEn {
+    Centro[1..N] ->Planeta[1..1]
+}
+
+relationship esPrincipalEn {
+    Centro[1..1] ->Planeta[0..1]
+}
+
+relationship encontradoPor {
+    Mineral[0..N] -> Centro[0..N]  
+    fechaHallazgo
+}
+relationship asignadaA {
+   NaveEspacial[0..N] -> Planeta[1..1]  
+}

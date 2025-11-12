@@ -357,54 +357,54 @@ function atob(str) {
 const tests = [
     {
         name: 'Ternaria - Solución correcta (encoding completo)',
-        correctFile: 'erd/Ternaria correcto.erd',
-        userFile: 'erd/Ternaria correcto.erd',
+        correctFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
+        userFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
         expectedErrors: 0
     },
     {
         name: 'Ternaria - Cardinalidades incorrectas (encoding completo)',
-        correctFile: 'erd/Ternaria correcto.erd',
-        userFile: 'erd/Ternaria incorrecta cardinalidades incorrectas.erd',
+        correctFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
+        userFile: 'erd/Teoria/Ternarias/Ternaria incorrecta cardinalidades incorrectas.erd',
         expectedErrors: 2, // Ahora detecta las cardinalidades incorrectas
         description: 'Verifica que el encoding/decoding preserva el contenido y detecta errores de cardinalidad'
     },
     {
         name: 'Ternaria - Falta relación (encoding completo)',
-        correctFile: 'erd/Ternaria correcto.erd',
-        userFile: 'erd/Ternaria incorrecta falta relacion.erd',
+        correctFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
+        userFile: 'erd/Teoria/Ternarias/Ternaria incorrecta falta relacion.erd',
         expectedErrors: 1,
         description: 'Detecta que falta un link en la relación ternaria'
     },
     {
         name: 'Superhéroes - Solución completa (encoding completo)',
-        correctFile: 'erd/Enunciado 1 ER Superhéroesv1 completo.erd',
-        userFile: 'erd/Enunciado 1 ER Superhéroesv1 completo.erd',
+        correctFile: 'erd/01 Superheroes/ER 01 Superheroes final.erd',
+        userFile: 'erd/01 Superheroes/ER 01 Superheroes final.erd',
         expectedErrors: 0
     },
     {
         name: 'Superhéroes - 9 errores (encoding completo)',
-        correctFile: 'erd/Enunciado 1 ER Superhéroesv1 completo.erd',
-        userFile: 'erd/Enunciado 1 ER Superhéroesv1 incorrecto.erd',
+        correctFile: 'erd/01 Superheroes/ER 01 Superheroes final.erd',
+        userFile: 'erd/01 Superheroes/ER 01 Superheroes incorrecto.erd',
         expectedErrors: 9, // Ahora detecta todos los errores
         description: 'Detecta todos los tipos de errores: entidades débiles, atributos, relaciones, roles'
     },
     {
         name: 'The Expanse - Solución completa (encoding completo)',
-        correctFile: 'erd/Enunciado 4 ER The Expanse v2 completo.erd',
-        userFile: 'erd/Enunciado 4 ER The Expanse v2 completo.erd',
+        correctFile: 'erd/04 The Expanse Completo/ER 04 The Expanse Completo final.erd',
+        userFile: 'erd/04 The Expanse Completo/ER 04 The Expanse Completo final.erd',
         expectedErrors: 0
     },
     {
-        name: 'The Expanse - 23 errores (encoding completo)',
-        correctFile: 'erd/Enunciado 4 ER The Expanse v2 completo.erd',
-        userFile: 'erd/Enunciado 4 ER The Expanse v2 incorrecto.erd',
-        expectedErrors: 23, // Ahora detecta todos los errores
+        name: 'The Expanse - 43 errores (encoding completo)',
+        correctFile: 'erd/04 The Expanse Completo/ER 04 The Expanse Completo final.erd',
+        userFile: 'erd/04 The Expanse Completo/ER 04 The Expanse Completo incorrecto.erd',
+        expectedErrors: 43, // Detecta todos los errores con la nueva versión correcta
         description: 'Test completo de encoding con el ERD más complejo - detecta todos los tipos de errores'
     },
     {
         name: 'Test de preservación de caracteres especiales',
-        correctFile: 'erd/Ternaria correcto.erd',
-        userFile: 'erd/Ternaria correcto.erd',
+        correctFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
+        userFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
         expectedErrors: 0,
         description: 'Verifica que acentos, espacios y caracteres especiales se preservan',
         customValidation: (encoded, decoded, original) => {
