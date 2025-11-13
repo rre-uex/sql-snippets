@@ -5,36 +5,35 @@ entity Patinete {
     matricula key
     marca
     modelo
-    fechaCompra
-    fechaUltimaRevision
+    fecha_compra
+    fecha_ultima_revision
     precio_minuto
     estado
 }
 
 entity Zona {
-    idZona key
-    nombreZona
-    habitantesZona
-    maxPatZona
-    tarifaZona
+    id_zona key
+    nombre
+    habitantes
+    max_patinetes
 }
 
-relationship asignadoA {
+relationship asignado_a {
     Patinete[1..N] -> Zona[1..1]
 }   
 
-relationship circulaPor {
+relationship circula_por {
     Patinete[1..N] -> Zona[1..N]
-}   
+}  
 
-weak entity PuntoAparcamiento {
-    numPunto partial-key
+weak entity Punto_Aparcamiento {
+    numero_punto partial-key
     direccion
     capacidad
 }
 
-weak relationship disponeDe {
-    Zona[1..1] -> PuntoAparcamiento[1..N]
+weak relationship dispone_de {
+    Zona[1..1] -> Punto_Aparcamiento[1..N]
 }
 
 weak entity Alquiler {
@@ -43,32 +42,36 @@ weak entity Alquiler {
     hora_fin_alquiler 
 }
 
-weak relationship usadoEn {
+weak relationship usado_en {
     Alquiler[0..N] -> Patinete[1..1]
 }
 
-relationship realizadoPor {
+relationship realizado_por {
    Alquiler[0..N] -> Usuario[1..1] 
 }
-relationship seInicioEn {
-    Alquiler[0..N] -> PuntoAparcamiento[1..1]
+relationship se_inicio_en {
+    Alquiler[0..N] -> Punto_Aparcamiento[1..1]
 }
 
-relationship terminoEn {
-    Alquiler[0..N] -> PuntoAparcamiento[0..1]
+relationship termino_en {
+    Alquiler[0..N] -> Punto_Aparcamiento[0..1]
 }
 
 entity Incidencia {
-    idIncidencia key
+    id_incidencia key
     descripcion
-    fechaIncidencia
-    horaIncidencia
+    fecha
+    hora
     coordenadas
 }
 
-relationship afectaA {
+relationship afecta_a {
     Incidencia[0..N] -> Patinete[1..1]
 }
+
+
+///////
+
 
 entity Persona{
     codigo_usuario key
@@ -83,7 +86,7 @@ entity Persona{
 entity Usuario extends Persona{
     codigo_usuario key
     email
-    tarjetaCredito
+    tarjeta_credito
 }
 
 //total,solapada
@@ -93,37 +96,39 @@ entity Empleado extends Persona{
     categoria
 }
 
-relationship responsableDe {
+relationship responsable_de {
     Empleado[1..1] -> Zona[0..1]     
 }
 
-relationship notificadaPor {
+//
+
+relationship notificada_por {
     Incidencia[0..N] -> Persona[1..1] 
 }
 
-relationship tramitadaPor {
+relationship tramitada_por {
     Empleado[1..1] -> Incidencia[0..N]     
 }
 
-relationship daLugarA {
+relationship da_lugar_a {
     Incidencia[0..1 | "Causante"] -> Incidencia[0..N | "Consecuencia"]
 }
 
 weak entity Revision {
-    fechaRevision partial-key
-    informeRevision
+    fecha_revision partial-key
+    informe
 }
 
-weak relationship sufridaPor {
+weak relationship realizada_a {
     Revision[0..N] -> Patinete[1..1]
 }
 
-relationship realizadaPor {
+relationship realizada_por {
     Revision[0..N] -> Empleado[1..N]
 }
 
 //parcial
-entity PatineteBaja extends Patinete{ 
+entity Patinete_De_Baja extends Patinete{ 
     matricula key
-    fechaBaja
+    fecha_baja
 }

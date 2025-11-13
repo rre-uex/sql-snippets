@@ -3,38 +3,41 @@ erdiagram Model
 notation=crowsfoot
 
 entity Interno{
-    numInterno key
-    nomInterno
-    apeInterno
-    docInterno
-    fechaNacInterno
-    fotoInterno
-    fechaIngreso
+    numero_interno key
+    nombre
+    apellido1
+    apellido2
+    dni //UNIQUE
+    fecha_nacimiento
+    foto_interno
+    fecha_ingreso
 }
 
 weak entity Condena{
-    fechaCondena partial-key
-    tiempoCondena
+    fecha_condena partial-key
+    tiempo_condena
 }
 
-weak relationship impuestaA{
+weak relationship impuesta_a{
     Condena[1..N] -> Interno[1..1]
 }
 
 entity Delito{
-    codDelito key
-    nombreDelito
-    tipoDelito
+    codigo_delito key
+    nombre_delito
+    tipo_delito
     gravedad
 }
 
-relationship causaDe{
+relationship causa_de{
     Condena[1..N] -> Delito[1..N]
 }
 
 weak entity Visita{
-    fechaHoraInicio partial-key
-    fechaHoraFin
+    fecha_inicio partial-key
+    hora_inicio partial-key
+    fecha_fin
+    hora_fin
 }
 
 weak relationship recibio{
@@ -42,59 +45,62 @@ weak relationship recibio{
 }
 
 entity Visitante{
-    codVisitante key
-    dniVisitante
-    nombreVisitante
+    codigo_visitante key
+    dni_visitante //UNIQUE
+    nombre
+    apellido1
+    apellido2
 }
 
 weak relationship incluyo{
     Visita[1..N] -> Visitante[1..N]
-    relacionInterno
+    relacion_interno
 }
 
 entity Personal {    
-    nifPersonal key
-    nssPersonal //UNIQUE
-    nomPersonal
-    apePersonal
-    tlfPersonal
-    categoriaPersonal
+    nif key
+    nss //UNIQUE
+    nombre
+    apellido1
+    apellido2
+    telefono
+    categoria
 }   
 
 //parcial,disjunta
-entity PersonalDeRegimen extends Personal{
-    nifPersonal key
+entity Personal_De_Regimen extends Personal{
+    nif key
     turno
 }
 
 //parcial, disjunta
-entity PersonalDeTratamiento extends Personal{
-    nifPersonal key
+entity Personal_De_Tratamiento extends Personal{
+    nif key
     especialidad
 }
 
-relationship esResponsableDe{
-    PersonalDeRegimen[1..1] -> Pabellon[0..1]
+relationship es_responsable_de{
+    Personal_De_Regimen[1..1] -> Pabellon[0..1]
 }
 
 weak entity Permiso{
-    fechaIniPermiso partial-key
-    fechaFinPermiso
-    fechaSolicPermiso
-    estadoPermiso
-    observPermiso
+    fecha_inicio partial-key
+    fecha_fin
+    fecha_solicitud
+    estado
+    observaciones
 }
 
 weak relationship solicito{
     Permiso[0..N] -> Interno[1..1]
 }
 
-relationship autorizadoODenegadoPor{
-    Permiso[0..N] -> PersonalDeRegimen[1..N]
+relationship autorizado_o_denegado_por{
+    Permiso[0..N] -> Personal_De_Regimen[1..N]
 }
 
 weak entity Revision{
-    fechaHoraRevision partial-key
+    fecha partial-key
     motivo
     diagnostico
     tratamiento
@@ -104,65 +110,65 @@ weak relationship paso{
     Revision[1..N] -> Interno[1..1]
 }
 
-relationship realizadaPor{
-    Revision[0..N] -> PersonalDeTratamiento[1..1]
+relationship realizada_por{
+    Revision[0..N] -> Personal_De_Tratamiento[1..1]
 }
 
 
 entity Actividad{
-    codActividad key
-    nombreAct
-    descripcionAct
+    codigo_actividad key
+    nombre
+    descripcion
 }
 
 //total, disjunta
-entity ActividadPermanente extends Actividad{
-    codActividad key
+entity Actividad_Permanente extends Actividad{
+    codigo_actividad key
 }
 
 //total, disjunta
-entity ActividadTemporal extends Actividad{
-    codActividad key
-    fechaInicioActTemp
-    fechaFinActTemp
+entity Actividad_Temporal extends Actividad{
+    codigo_actividad key
+    fecha_inicio
+    fecha_fin
 }
 
-relationship organizadaPor{
-     ActividadTemporal[0..N] -> Personal[1..1] 
+relationship organizada_por{
+     Actividad_Temporal[0..N] -> Personal[1..1] 
 }
 
-relationship participoEn{
-    Interno[1..N] ->  ActividadTemporal[0..N]
+relationship participo_en{
+    Interno[1..N] ->  Actividad_Temporal[0..N]
 }
 
 entity Celda {
-    numCelda key
+    numero key
     capacidad
 }
 
-relationship alojadoEn{
+relationship alojado_en{
     Interno[0..N] -> Celda[1..1]
 }
 
 entity Pabellon {
-    numPabellon key
-    nomPabellon
-    tipoPabellon
+    numero_pabellon key
+    nombre
+    tipo
 }
 
-relationship ubicadaEn{
+relationship ubicada_en{
     Celda[0..N] -> Pabellon[1..1]
 }
 
-weak entity HistoricoParticipacion {
-    fechaInicio partial-key
-    fechaFin
+weak entity Historico_Participacion {
+    fecha_inicio partial-key
+    fecha_fin
 }
 
-weak relationship relativoA {
-    HistoricoParticipacion[0..N] -> Interno[1..1]
+weak relationship relativo_a {
+    Historico_Participacion[0..N] -> Interno[1..1]
 }
 
-relationship correspondeA{
-    HistoricoParticipacion[1..N] -> ActividadPermanente[1..1]
+relationship corresponde_a{
+    Historico_Participacion[1..N] -> Actividad_Permanente[1..1]
 }

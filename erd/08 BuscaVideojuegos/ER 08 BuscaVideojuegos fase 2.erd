@@ -1,0 +1,26 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Videojuego {
+    id_videojuego key
+    titulo
+    sinopsis
+    url_videojuego 
+}
+
+relationship es_secuela_de {
+    Videojuego[0..1 | "original"] -> Videojuego[0..N | "secuela"]
+}
+
+//
+
+entity Productora {
+    id_productora key
+    nombre_productora
+    url_productora 
+}
+
+relationship produce {
+    Productora[1..N] -> Videojuego[1..N]
+}
+

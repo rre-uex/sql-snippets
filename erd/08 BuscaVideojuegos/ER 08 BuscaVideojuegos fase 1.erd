@@ -1,0 +1,14 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Videojuego {
+    id_videojuego key
+    titulo
+    sinopsis
+    url_videojuego 
+}
+
+relationship es_secuela_de {
+    Videojuego[0..1 | "original"] -> Videojuego[0..N | "secuela"]
+}
+

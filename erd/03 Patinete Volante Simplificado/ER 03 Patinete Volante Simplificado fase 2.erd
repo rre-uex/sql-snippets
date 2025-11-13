@@ -5,34 +5,33 @@ entity Patinete {
     matricula key
     marca
     modelo
-    fechaCompra
-    fechaUltimaRevision
+    fecha_compra
+    fecha_ultima_revision
     precio_minuto
     estado
 }
 
 entity Zona {
-    idZona key
-    nombreZona
-    habitantesZona
-    maxPatZona
-    tarifaZona
+    id_zona key
+    nombre
+    habitantes
+    max_patinetes
 }
 
-relationship asignadoA {
+relationship asignado_a {
     Patinete[1..N] -> Zona[1..1]
 }   
 
-relationship circulaPor {
+relationship circula_por {
     Patinete[1..N] -> Zona[1..N]
-}   
+}  
 
-weak entity PuntoAparcamiento {
-    numPunto partial-key
+weak entity Punto_Aparcamiento {
+    numero_punto partial-key
     direccion
     capacidad
 }
 
-weak relationship disponeDe {
-    Zona[1..1] -> PuntoAparcamiento[1..N]
+weak relationship dispone_de {
+    Zona[1..1] -> Punto_Aparcamiento[1..N]
 }

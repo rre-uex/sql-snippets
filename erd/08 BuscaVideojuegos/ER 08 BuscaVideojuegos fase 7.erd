@@ -138,25 +138,4 @@ relationship se_vende_actualmente_en {
     precio
 }
 
-//
 
-entity Usuario {
-    id_usuario key
-    nombre
-    email
-    password
-    fecha_nacimiento
-}
-
-relationship valora {
-    Usuario[0..N] -> Videojuego[0..N]
-    puntuacion
-}
-
-relationship favorito {
-    Usuario[0..N] -> Edicion_Fisica[0..N]
-}
-
-relationship prefiere {
-    Usuario[0..N] -> Genero[0..N]
-}
