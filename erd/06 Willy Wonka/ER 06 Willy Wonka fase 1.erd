@@ -1,0 +1,31 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Fabrica {
+    codigo_fabrica key
+    direccion
+    telefono
+}
+
+entity Ciudad_Secreta {
+    codigo_ciudad key
+    nombre
+}
+
+relationship ubicada_en {
+    Fabrica[0..1] -> Ciudad_Secreta[1..1]
+}
+
+entity Pais_Magico {
+    codigo_pais key
+    nombre
+}
+
+relationship situada_en {
+    Ciudad_Secreta[1..N] -> Pais_Magico[1..1]
+}
+
+relationship supervisa {
+    Fabrica[0..1 | "Supervisora" ] -> Fabrica[0..N | "Supervisada"] 
+}
+

@@ -1,0 +1,77 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Fabrica {
+    codigo_fabrica key
+    direccion
+    telefono
+}
+
+entity Ciudad_Secreta {
+    codigo_ciudad key
+    nombre
+}
+
+relationship ubicada_en {
+    Fabrica[0..1] -> Ciudad_Secreta[1..1]
+}
+
+entity Pais_Magico {
+    codigo_pais key
+    nombre
+}
+
+relationship situada_en {
+    Ciudad_Secreta[1..N] -> Pais_Magico[1..1]
+}
+
+relationship supervisa {
+    Fabrica[0..1 | "Supervisora" ] -> Fabrica[0..N | "Supervisada"] 
+}
+
+//
+
+entity Trabajador {
+    numero_seguro_magico key
+    nombre_trabajador
+    domicilio_secreto
+    fecha_contratacion
+    categoria
+}
+//total,disjunta
+entity Oompa_Loompa extends Trabajador{
+    numero_seguro_magico key
+    cancion_favorita
+}
+
+relationship trabaja_en {
+    Oompa_Loompa[1..N] -> Fabrica[1..1]
+}
+
+relationship dirige {
+    Oompa_Loompa[1..1] -> Fabrica[0..1]
+}
+
+weak entity HistorialGerencias {
+    fechaIni partial-key
+    fechaFin
+}   
+
+relationship tuvo{
+    Fabrica[1..1] -> HistorialGerencias[0..N]  
+}
+
+weak relationship ha_tenido{
+    Oompa_Loompa[1..1] -> HistorialGerencias[0..N]
+}
+
+//total,disjunta
+entity Administrador extends Trabajador{
+    numero_seguro_magico key
+}
+
+//total,disjunta
+entity Disenador extends Trabajador{
+    numero_seguro_magico key
+}
+

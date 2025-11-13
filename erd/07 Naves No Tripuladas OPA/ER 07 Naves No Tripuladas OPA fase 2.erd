@@ -1,0 +1,52 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Empleado {
+    numero_empleado key
+    nombre
+    apellidos
+    categoria_profesional
+}
+
+entity Nave {
+    codigo_nave key
+    nombre
+    peso
+    longitud
+    anchura
+    velocidad_teorica
+    capacidad_prevista
+}
+
+entity Etapa_Desarrollo {
+    codigo_etapa key
+    nombre_etapa
+}
+
+relationship enEtapaActual {
+    Nave[0..N] -> Etapa_Desarrollo[1..1]
+    fecha_desde
+}
+
+relationship completada_por {
+    Nave[0..N] -> Etapa_Desarrollo[0..N]
+    fecha_inicio
+    fecha_fin
+}
+
+
+//
+
+//parcial,disjunta
+entity Ingeniero_Aeroespacial extends Empleado {
+    numEmpleado key
+}
+
+relationship responsable_de {
+    Nave[1..1] -> Ingeniero_Aeroespacial[1..1]
+}
+
+relationship evoluciona_de {
+    Nave[0..1 | "original"] -> Nave[0..N | "derivado"]
+}
+

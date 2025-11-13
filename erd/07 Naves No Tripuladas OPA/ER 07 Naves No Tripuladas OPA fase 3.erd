@@ -1,0 +1,77 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Empleado {
+    numero_empleado key
+    nombre
+    apellidos
+    categoria_profesional
+}
+
+entity Nave {
+    codigo_nave key
+    nombre
+    peso
+    longitud
+    anchura
+    velocidad_teorica
+    capacidad_prevista
+}
+
+entity Etapa_Desarrollo {
+    codigo_etapa key
+    nombre_etapa
+}
+
+relationship enEtapaActual {
+    Nave[0..N] -> Etapa_Desarrollo[1..1]
+    fecha_desde
+}
+
+relationship completada_por {
+    Nave[0..N] -> Etapa_Desarrollo[0..N]
+    fecha_inicio
+    fecha_fin
+}
+
+
+//
+
+//parcial,disjunta
+entity Ingeniero_Aeroespacial extends Empleado {
+    numEmpleado key
+}
+
+relationship responsable_de {
+    Nave[1..1] -> Ingeniero_Aeroespacial[1..1]
+}
+
+relationship evoluciona_de {
+    Nave[0..1 | "original"] -> Nave[0..N | "derivado"]
+}
+
+//
+
+//parcial,disjunta
+entity Ingeniero_Software extends Empleado {
+    numero_empleado key
+}
+
+relationship asignadoA {
+    Ingeniero_Software[1..N] -> Nave[1..1]
+    fecha_desde
+}
+
+weak entity Asignaciones_Ing_Soft_a_Naves{
+    fecha_inicio partial-key
+    fecha_fin
+}
+
+weak relationship es_de{
+    Ingeniero_Software[1..1] -> Asignaciones_Ing_Soft_a_Naves[0..N] 
+}
+
+relationship ha_tenido{
+   Nave[1..1] -> Asignaciones_Ing_Soft_a_Naves[0..N]
+}
+

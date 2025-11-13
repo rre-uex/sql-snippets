@@ -1,0 +1,121 @@
+erdiagram Model
+notation=crowsfoot
+
+
+entity Estudiante {
+    numero_expediente key
+    nombre
+    apellido1
+    apellido2
+    sexo
+    fecha_nacimiento
+}
+
+//parcial
+entity Estudiante_Especial extends Estudiante {
+    numero_expediente key
+    descripcion
+    atencion_especial
+}       
+
+entity Persona {
+    nif key
+    nombre
+    apellido1
+    apellido2
+    telefono
+    direccion
+}
+
+//total,solapada
+entity Tutora extends Persona{
+    nif key
+    profesion
+}
+
+//total,solapada
+entity Docente extends Persona{
+    nif key
+    salario
+    cuenta 
+}
+
+entity Departamento {
+    codigo_departamento key
+    nombre_departamento
+}
+
+entity Asignatura {
+    codigo_asignatura key
+    nombre_asignatura
+}
+
+entity Curso {
+    numero_curso key
+    descripcion_curso
+}
+
+weak entity Objetivos_Aprendizaje{
+    codigo_objetivo partial-key
+    descripcion_objetivo
+}
+
+entity Asoc_Asignaturas_Curso{
+numero_curso key
+codigo_asignatura key
+horas
+}
+
+relationship seImpartenEn {
+    Asignatura[1..1] -> Asoc_Asignaturas_Curso[1..N]
+}
+
+relationship constaDe {
+    Curso[1..1] -> Asoc_Asignaturas_Curso[1..N]
+}
+
+relationship matriculado {
+    Estudiante[1..N] -> Asoc_Asignaturas_Curso[1..N]
+    fecha
+    nota1
+    nota2
+    nota3
+
+}
+
+relationship aCargoDe {
+    Estudiante[1..N] -> Tutora[1..N]
+    relacion
+}
+
+relationship responsableDe {
+    Docente[1..1] -> Curso[0..1]
+}
+
+relationship perteneceA {
+    Docente[1..N] -> Departamento[1..1]
+}
+
+relationship imparte {
+   Docente[1..1] -> Asoc_Asignaturas_Curso[1..N]
+}
+
+weak relationship tiene {
+    Curso[1..1] -> Objetivos_Aprendizaje[1..N]
+}
+
+relationship organiza {
+    Departamento[1..1] -> Asignatura[1..N]
+}
+
+
+
+
+
+
+
+
+
+
+
+

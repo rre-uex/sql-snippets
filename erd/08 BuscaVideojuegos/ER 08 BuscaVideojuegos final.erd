@@ -1,0 +1,144 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Productora {
+    idProductora key
+    nombreProductora
+    urlProductora 
+}
+
+relationship produce {
+    Productora[1..N] -> Videojuego[1..N]
+}
+
+entity Videojuego {
+    idVideojuego key
+    titulo
+    sinopsis
+    urlVideojuego 
+}
+
+relationship esSecuelaDe {
+    Videojuego[0..1 | "original"] -> Videojuego[0..N | "secuela"]
+}
+
+entity Genero{
+    idGenero key
+    nombre
+}
+
+entity CalificacionPorEdades {
+    idCalificacion key
+    edadMinimaRecomendada
+}
+
+relationship edadMinimaRecomendada {
+    Videojuego[1..N] -> CalificacionPorEdades[1..1]
+}
+
+relationship seClasificaComo {
+    Genero[1..N] -> Videojuego[0..N]
+}
+
+entity Lenguaje{    
+    idLenguaje key
+    nombre
+}
+
+relationship lenguajeAudio {
+    Videojuego[0..N] ->Lenguaje[1..N]
+}
+
+relationship lenguajeSubtitulos {
+    Videojuego[0..N] ->Lenguaje[0..N]
+}
+
+//parcial,solapada
+entity Multijugador extends Videojuego{
+    idVideojuego key
+    numeroMaximoJugadores
+    anchoBandaMinimo
+    pingMinimo
+}
+
+//parcial,solapada
+entity RealidadVirtual extends Videojuego{
+    idVideojuego key
+}
+
+entity DispositivosRV{
+    idDispositivo key
+    nombre
+    urlDispositivoRV 
+}
+
+relationship dispositivoRVCompatible {
+    RealidadVirtual[1..N] -> DispositivosRV[1..N]
+}
+
+entity EdicionFisica {
+    codigoBarras key
+    nombreEdicion
+    descripcionExtras
+    fechaLanzamiento
+}
+
+relationship seEditaEn {
+    Videojuego[1..1] -> EdicionFisica[0..N]
+}
+
+entity Plataforma {
+    idPlataforma key
+    nombre
+}
+
+relationship seJuegaEn {
+    EdicionFisica[1..N] -> Plataforma[1..1]
+}
+
+entity Vendedor {
+    idVendedor key
+    nombre
+    urlVendedor
+}
+
+weak entity PrecioVentaEdicion {
+    fechaInicio partial-key
+    fechaFin 
+    precio
+}
+
+weak relationship haTenidoPrecioEnVendedor {
+    EdicionFisica[1..1] -> PrecioVentaEdicion[0..N]
+}
+
+weak relationship tuvoPrecio {
+    PrecioVentaEdicion[1..N] -> Vendedor[1..1]
+}
+
+relationship seVendeActualmenteEn {
+    EdicionFisica[1..N] -> Vendedor[0..N]
+    fechaDesde
+    precio
+}
+
+entity Usuario {
+    idUsuario key
+    nombre
+    email
+    password
+    fechaNacimiento
+}
+
+relationship valora {
+    Usuario[0..N] -> Videojuego[0..N]
+    puntuacion
+}
+
+relationship favorito {
+    Usuario[0..N] -> EdicionFisica[0..N]
+}
+
+relationship prefiere {
+    Usuario[0..N] -> Genero[0..N]
+}

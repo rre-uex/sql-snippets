@@ -28,7 +28,7 @@ relationship posee {
 }
 
 relationship coordina {
-    Superheroe[1..1] -> Planeta[0..1] 
+    Superheroe[0..1] -> Planeta[0..1] 
     fecha_inicio
 }
 

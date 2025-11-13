@@ -1,0 +1,132 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Categoria {
+   cod_categ key
+   nom_categ
+}
+
+entity Articulo {
+   ref_art key
+   desc_art
+   precio_art
+   stock_art
+   puntuacion_art
+}
+
+relationship clasifica_a {
+   Categoria[1..N] -> Articulo[1..N]
+}
+
+relationship relacionado_con {
+   Articulo[0..N] -> Articulo[0..N]
+   grado_similitud
+}
+
+entity Proveedor {
+   cif_prov key
+   nom_prov
+   dir_prov
+   tlf_prov
+   cuenta_prov
+}
+
+relationship suministrado_por {
+   Proveedor[1..1] -> Articulo[1..N]
+}
+
+entity Cliente {
+   nif_cli key
+   nom_cli
+   apellidos_cli
+   direccion_cli
+}
+
+entity Pedido {
+   num_pedido key
+   fecha_sol_pedido
+   hora_sol_pedido
+   direccion_pedido
+   estado_pedido
+}
+
+relationship incluido_en{
+   Articulo[1..N] -> Pedido[0..N]
+   unidades
+   precio_unidad
+}
+
+relationship realizado_por {
+   Cliente[1..1] -> Pedido[1..N]
+}
+
+entity TipoEnvio {
+   cod_tipo_envio key
+   nom_tipo_envio //UNIQUE
+   tarifa_tipo_envio
+}
+
+relationship asociado_a {
+   Pedido[1..N] -> TipoEnvio[1..1]
+}
+
+//parcial
+entity Cliente_Habitual extends Cliente {
+   nif_cli key
+   email_cli
+   password_cli
+}
+
+weak entity Valoracion {
+   fecha_val partial-key
+   hora_val partial-key
+   puntuacion
+   opinion
+}
+
+weak relationship otorgada_a {
+   Valoracion[0..N] -> Articulo[1]
+}
+
+weak relationship realizada_por {
+   Valoracion[0..N] -> Cliente_Habitual[1]
+}
+// parcial
+entity PedidoEnviado extends Pedido {
+   num_pedido key
+   fecha_env_pedido
+   hora_env_pedido
+}
+
+entity Empleado {
+   nss_emp key
+   nif_emp //UNIQUE
+   nom_emp
+   apellidos_emp
+   direccion_emp
+   fecha_emp
+   tlf_emp
+}
+
+//total, disjunta
+entity EmpleadoAdministracion extends Empleado {
+   nss_emp key
+   
+}
+
+relationship asignado_a {
+   EmpleadoAdministracion[1..1] -> Pedido[1..N]
+}
+
+//total, disjunta
+entity EmpleadoAlmacen extends Empleado {
+   nss_emp key
+   zona_emp   
+}
+
+relationship preparado_por {
+   EmpleadoAlmacen[1..N] -> Pedido[1..N]
+}
+
+
+

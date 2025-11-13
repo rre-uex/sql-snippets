@@ -1,0 +1,168 @@
+erdiagram Model
+
+notation=crowsfoot
+
+entity Interno{
+    numInterno key
+    nomInterno
+    apeInterno
+    docInterno
+    fechaNacInterno
+    fotoInterno
+    fechaIngreso
+}
+
+weak entity Condena{
+    fechaCondena partial-key
+    tiempoCondena
+}
+
+weak relationship impuestaA{
+    Condena[1..N] -> Interno[1..1]
+}
+
+entity Delito{
+    codDelito key
+    nombreDelito
+    tipoDelito
+    gravedad
+}
+
+relationship causaDe{
+    Condena[1..N] -> Delito[1..N]
+}
+
+weak entity Visita{
+    fechaHoraInicio partial-key
+    fechaHoraFin
+}
+
+weak relationship recibio{
+    Visita[0..N] -> Interno[1..1]
+}
+
+entity Visitante{
+    codVisitante key
+    dniVisitante
+    nombreVisitante
+}
+
+weak relationship incluyo{
+    Visita[1..N] -> Visitante[1..N]
+    relacionInterno
+}
+
+entity Personal {    
+    nifPersonal key
+    nssPersonal //UNIQUE
+    nomPersonal
+    apePersonal
+    tlfPersonal
+    categoriaPersonal
+}   
+
+//parcial,disjunta
+entity PersonalDeRegimen extends Personal{
+    nifPersonal key
+    turno
+}
+
+//parcial, disjunta
+entity PersonalDeTratamiento extends Personal{
+    nifPersonal key
+    especialidad
+}
+
+relationship esResponsableDe{
+    PersonalDeRegimen[1..1] -> Pabellon[0..1]
+}
+
+weak entity Permiso{
+    fechaIniPermiso partial-key
+    fechaFinPermiso
+    fechaSolicPermiso
+    estadoPermiso
+    observPermiso
+}
+
+weak relationship solicito{
+    Permiso[0..N] -> Interno[1..1]
+}
+
+relationship autorizadoODenegadoPor{
+    Permiso[0..N] -> PersonalDeRegimen[1..N]
+}
+
+weak entity Revision{
+    fechaHoraRevision partial-key
+    motivo
+    diagnostico
+    tratamiento
+}
+
+weak relationship paso{
+    Revision[1..N] -> Interno[1..1]
+}
+
+relationship realizadaPor{
+    Revision[0..N] -> PersonalDeTratamiento[1..1]
+}
+
+
+entity Actividad{
+    codActividad key
+    nombreAct
+    descripcionAct
+}
+
+//total, disjunta
+entity ActividadPermanente extends Actividad{
+    codActividad key
+}
+
+//total, disjunta
+entity ActividadTemporal extends Actividad{
+    codActividad key
+    fechaInicioActTemp
+    fechaFinActTemp
+}
+
+relationship organizadaPor{
+     ActividadTemporal[0..N] -> Personal[1..1] 
+}
+
+relationship participoEn{
+    Interno[1..N] ->  ActividadTemporal[0..N]
+}
+
+entity Celda {
+    numCelda key
+    capacidad
+}
+
+relationship alojadoEn{
+    Interno[0..N] -> Celda[1..1]
+}
+
+entity Pabellon {
+    numPabellon key
+    nomPabellon
+    tipoPabellon
+}
+
+relationship ubicadaEn{
+    Celda[0..N] -> Pabellon[1..1]
+}
+
+weak entity HistoricoParticipacion {
+    fechaInicio partial-key
+    fechaFin
+}
+
+weak relationship relativoA {
+    HistoricoParticipacion[0..N] -> Interno[1..1]
+}
+
+relationship correspondeA{
+    HistoricoParticipacion[1..N] -> ActividadPermanente[1..1]
+}

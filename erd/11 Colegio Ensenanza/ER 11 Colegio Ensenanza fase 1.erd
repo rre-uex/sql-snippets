@@ -1,0 +1,57 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Estudiante {
+    numero_expediente key
+    nombre
+    apellido1
+    apellido2
+    sexo
+    fecha_nacimiento
+}
+
+//parcial
+entity Estudiante_Especial extends Estudiante {
+    numero_expediente key
+    descripcion
+    atencion_especial
+}       
+
+entity Persona {
+    nif key
+    nombre
+    apellido1
+    apellido2
+    telefono
+    direccion
+}
+
+//total,solapada
+entity Tutora extends Persona{
+    nif key
+    profesion
+}
+
+//total,solapada
+entity Docente extends Persona{
+    nif key
+    salario
+    cuenta 
+}
+relationship aCargoDe {
+    Estudiante[1..N] -> Tutora[1..N]
+    relacion
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
