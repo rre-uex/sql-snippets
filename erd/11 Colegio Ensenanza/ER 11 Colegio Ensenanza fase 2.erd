@@ -38,7 +38,8 @@ entity Docente extends Persona{
     salario
     cuenta 
 }
-relationship aCargoDe {
+
+relationship a_cargo_de {
     Estudiante[1..N] -> Tutora[1..N]
     relacion
 }
@@ -57,7 +58,7 @@ weak relationship tiene {
     Curso[1..1] -> Objetivos_Aprendizaje[1..N]
 }
 
-relationship responsableDe {
+relationship responsable_de {
     Docente[1..1] -> Curso[0..1]
 }
 

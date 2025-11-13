@@ -1,17 +1,49 @@
 erdiagram Model
 notation=crowsfoot
 
-entity Categoria {
-   cod_categ key
-   nom_categ
+
+entity Cliente {
+   nif key
+   nombre_completo
+   email
+   contrasena_encriptada
 }
 
+weak entity Direccion {
+   numero_direccion partial-key
+   direccion
+}
+
+weak relationship tiene_direccion {
+   Cliente[1..1] -> Direccion[1..N]
+}
+
+//
+
 entity Articulo {
-   ref_art key
-   desc_art
-   precio_art
-   stock_art
-   puntuacion_art
+   referencia key
+   descripcion
+   precio
+   stock
+}
+
+entity Proveedor {
+   cif key
+   nombre
+   email
+   telefono
+   cuenta
+}
+
+relationship suministrado_por {
+   Proveedor[1..1] -> Articulo[1..N]
+}
+
+//
+
+entity Categoria {
+   codigo_categoria key
+   nombre
 }
 
 relationship clasifica_a {
@@ -19,114 +51,113 @@ relationship clasifica_a {
 }
 
 relationship relacionado_con {
-   Articulo[0..N] -> Articulo[0..N]
+   Articulo[0..N| "similar_1"] -> Articulo[0..N| "similar_2"]
    grado_similitud
 }
 
-entity Proveedor {
-   cif_prov key
-   nom_prov
-   dir_prov
-   tlf_prov
-   cuenta_prov
-}
-
-relationship suministrado_por {
-   Proveedor[1..1] -> Articulo[1..N]
-}
-
-entity Cliente {
-   nif_cli key
-   nom_cli
-   apellidos_cli
-   direccion_cli
-}
+//
 
 entity Pedido {
-   num_pedido key
-   fecha_sol_pedido
-   hora_sol_pedido
-   direccion_pedido
-   estado_pedido
+   numero_pedido key
+   fecha
+   hora
+   estado
 }
 
-relationship incluido_en{
-   Articulo[1..N] -> Pedido[0..N]
+relationship contiene {
+   Pedido[0..N] -> Articulo[1..N]
    unidades
-   precio_unidad
 }
 
 relationship realizado_por {
-   Cliente[1..1] -> Pedido[1..N]
+   Cliente[1..1] -> Pedido[0..N]
 }
 
-entity TipoEnvio {
-   cod_tipo_envio key
-   nom_tipo_envio //UNIQUE
-   tarifa_tipo_envio
+entity Tipo_Envio {
+   codigo_envio key
+   nombre_tipo_envio //UNIQUE
+   tarifa
 }
 
 relationship asociado_a {
-   Pedido[1..N] -> TipoEnvio[1..1]
+   Pedido[1..N] -> Tipo_Envio[1..1]
 }
 
-//parcial
-entity Cliente_Habitual extends Cliente {
-   nif_cli key
-   email_cli
-   password_cli
+relationship se_envia_a{
+   Pedido[0..N] -> Direccion[1..1]
 }
+
+//
+
+entity Empleado {
+   nss key
+   nif //UNIQUE
+   nombre
+   apellido_1
+   apellido_2
+   direccion
+   fecha_ingreso
+   telefono
+}
+
+//total,disjunta
+entity Administrativo extends Empleado {
+   nss key
+}
+
+relationship asignado_a {
+   Administrativo[1..1] -> Pedido[1..N]
+}
+
+//total,disjunta
+entity Preparador_De_Pedido extends Empleado {
+   nss key
+   zona_almacen   
+}
+
+relationship preparado_por {
+   Preparador_De_Pedido[1..N] -> Pedido[1..N]
+}
+
+entity Factura{
+   numero_factura key
+   fecha_emision
+   importe_total
+}
+
+relationship asociada_a{
+   Factura[1..1] -> Pedido[1..1]
+}
+
+relationship genera {
+   Administrativo[1..1] -> Factura[1..N]
+}
+
+//
 
 weak entity Valoracion {
-   fecha_val partial-key
-   hora_val partial-key
+   fechal partial-key
+   hora partial-key
    puntuacion
    opinion
 }
 
 weak relationship otorgada_a {
-   Valoracion[0..N] -> Articulo[1]
+   Valoracion[0..N] -> Articulo[1..1]
 }
 
 weak relationship realizada_por {
-   Valoracion[0..N] -> Cliente_Habitual[1]
+   Valoracion[0..N] -> Cliente[1..1]
 }
 // parcial
 entity PedidoEnviado extends Pedido {
-   num_pedido key
-   fecha_env_pedido
-   hora_env_pedido
+   numero_pedido key
+   fecha_envio
+   hora_envio
 }
 
-entity Empleado {
-   nss_emp key
-   nif_emp //UNIQUE
-   nom_emp
-   apellidos_emp
-   direccion_emp
-   fecha_emp
-   tlf_emp
-}
 
-//total, disjunta
-entity EmpleadoAdministracion extends Empleado {
-   nss_emp key
-   
-}
 
-relationship asignado_a {
-   EmpleadoAdministracion[1..1] -> Pedido[1..N]
-}
-
-//total, disjunta
-entity EmpleadoAlmacen extends Empleado {
-   nss_emp key
-   zona_emp   
-}
-
-relationship preparado_por {
-   EmpleadoAlmacen[1..N] -> Pedido[1..N]
-}
 
 
 

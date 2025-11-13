@@ -6,7 +6,6 @@ entity Patinete {
     marca
     modelo
     fecha_compra
-    fecha_ultima_revision
     precio_minuto
     estado
 }

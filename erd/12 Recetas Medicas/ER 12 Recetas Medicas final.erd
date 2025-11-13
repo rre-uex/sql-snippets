@@ -2,40 +2,40 @@ erdiagram Model
 notation=crowsfoot
 
 entity Municipio {
-    codMunicipio key
-    nombreMunicipio
+    codigo_municipio key
+    nombre_municipio
 }
 
 entity Farmacia {
     IOF key
-    nombreFarmacia
+    nombre_farmacia
     CIF //UNIQUE
-    direccionFarmacia
-    cuentaBancariaFarmacia
+    direccion_farmacia
+    cuenta_bancaria
 }
 
-relationship domiciliadaEn {
+relationship domiciliada_en {
     Farmacia[1..N] -> Municipio[1..1]
 }
 
 entity Provincia {
-    codProvincia key
-    nombreProvincia
+    codigo_provincia key
+    nombre_provincia
 }
 
-relationship situadoEn {
+relationship situado_en {
     Municipio[1..N] -> Provincia[1..1]
 }
 
-entity CentroSanitario {
-    codCentro key
-    nombreCentro
-    direccionCentro
-    telefonoCentro
+entity Centro_Sanitario {
+    codigo_centro key
+    nombre
+    direccion
+    telefono
 }
 
-relationship ubicadoEn {
-    CentroSanitario[0..N] -> Municipio[1..1]
+relationship ubicado_en {
+    Centro_Sanitario[0..N] -> Municipio[1..1]
 }
 
 entity Persona {
@@ -43,15 +43,15 @@ entity Persona {
     nombre
     apellidos
     NIF //UNIQUE
-    fechaNacimiento
+    fecha_nacimiento
     sexo
-    telefonoPersona
+    telefono_persona
 }
 
 //total,solapada
 entity Medico extends Persona {
     CIP key
-    numColegiado //UNIQUE
+    numero_colegiado //UNIQUE
     especialidad
 }
 
@@ -60,38 +60,38 @@ entity Paciente extends Persona {
     CIP key
 }
 
-relationship PerteneceA {
-    Paciente[1..N] -> CentroSanitario[1..1]
+relationship pertenece_a{
+    Paciente[1..N] -> Centro_Sanitario[1..1]
 }
 
-relationship AsignadoA {
+relationship asignado_a {
     Paciente[1..N] -> Medico[1..1]
 }
 
-weak entity AdscripcionMedico{
-    fechaDesde partial-key
-    fechaHasta
+weak entity Adscripcion_Medico{
+    fecha_desde partial-key
+    fecha_hasta
 }
 
-weak relationship IncluidoEn {
-    Medico[1..1] -> AdscripcionMedico[0..N]
+weak relationship incluido_en {
+    Medico[1..1] -> Adscripcion_Medico[0..N]
 }
 
-relationship RelacionadaCon {
-    CentroSanitario[1..1] -> AdscripcionMedico[1..N]
+relationship relacionada_con {
+    Centro_Sanitario[1..1] -> Adscripcion_Medico[1..N]
 }
 
-relationship AdscritoA {
-    Medico[1..N] -> CentroSanitario[1..1]
+relationship adscrito_a {
+    Medico[1..N] -> Centro_Sanitario[1..1]
     fechaAdscripcion
 }
 
 weak entity Prescripcion {
-    numPrescripcion partial-key
-    fechaPrescripcion
-    horaPrescripcion
-    fechaInicioTratamiento
-    fechaFinTratamiento
+    numero_prescripcion partial-key
+    fecha
+    hora
+    fecha_inicio_tratamiento
+    fecha_fin_tratamiento
     dosis
     observaciones
 }
@@ -105,11 +105,11 @@ weak relationship recibe {
 }
 
 entity Medicamento {
-    codMedicamento key
-    nombreMedicamento
-    descripcionFormato
-    precioMedicamento
-    importeSubvencionado
+    codigo_medicamento key
+    nombre
+    descripcion
+    precio
+    importe_subvencionado
     prospecto
 }
 
@@ -118,38 +118,38 @@ relationship incluye {
 }
 
 entity Receta{
-    codReceta key
+    codigo_receta key
     fechaReceta
 }
 
-relationship daLugarA {
+relationship da_lugar_a {
     Prescripcion[1..1] -> Receta[0..N]
 }
 
-relationship dispensadaEn{
+relationship dispensada_en{
     Receta[1..N] -> Farmacia[1..1]
 }
 
-relationship incompatibleCon{
+relationship incompatible_con{
     Medicamento[0..N] -> Medicamento[0..N]
 }
 
-entity PrincipioActivo{
-    codPA key
-    nombrePA
-    resumenPA
+entity Principio_Activo{
+    cod_PA key
+    nombre
+    resumen
 }
 
-entity TipoMedicamento{ 
-    codTM key
-    nombreTM
+entity Tipo_Medicamento{ 
+    cod_TM key
+    nombre
 }
 
 relationship contiene{
-    Medicamento[1..N] -> PrincipioActivo[1..N]
+    Medicamento[1..N] -> Principio_Activo[1..N]
 }
 
 relationship clasificadoComo{
-    Medicamento[1..N] -> TipoMedicamento[1..N]
+    Medicamento[1..N] -> Tipo_Medicamento[1..N]
 }
 

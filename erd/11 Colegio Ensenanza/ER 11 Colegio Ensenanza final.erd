@@ -66,11 +66,11 @@ codigo_asignatura key
 horas
 }
 
-relationship seImpartenEn {
+relationship se_imparten_en {
     Asignatura[1..1] -> Asoc_Asignaturas_Curso[1..N]
 }
 
-relationship constaDe {
+relationship consta_de {
     Curso[1..1] -> Asoc_Asignaturas_Curso[1..N]
 }
 
@@ -80,19 +80,18 @@ relationship matriculado {
     nota1
     nota2
     nota3
-
 }
 
-relationship aCargoDe {
+relationship a_cargo_de {
     Estudiante[1..N] -> Tutora[1..N]
     relacion
 }
 
-relationship responsableDe {
+relationship responsable_de {
     Docente[1..1] -> Curso[0..1]
 }
 
-relationship perteneceA {
+relationship pertenece_a {
     Docente[1..N] -> Departamento[1..1]
 }
 

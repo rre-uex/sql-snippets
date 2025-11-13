@@ -38,7 +38,7 @@ entity Docente extends Persona{
     salario
     cuenta 
 }
-relationship aCargoDe {
+relationship a_cargo_de {
     Estudiante[1..N] -> Tutora[1..N]
     relacion
 }
