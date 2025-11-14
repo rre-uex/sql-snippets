@@ -6,8 +6,34 @@ let expectedSolutionText = '';
 const CONFIG = {
     MAX_SOLUTION_SIZE: 100000, // 100KB max (encoded)
     MAX_DECODED_SIZE: 200000,  // 200KB max (decoded)
-    isDevelopment: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    isDevelopment: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
+    COOKIE_NAME: 'erd_student_solution',
+    COOKIE_EXPIRY_DAYS: 30
 };
+
+// --- Cookie Helper Functions ---
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${encodeURIComponent(value)};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+        let cookie = cookies[i];
+        while (cookie.charAt(0) === ' ') cookie = cookie.substring(1);
+        if (cookie.indexOf(nameEQ) === 0) {
+            return decodeURIComponent(cookie.substring(nameEQ.length));
+        }
+    }
+    return null;
+}
+
+function deleteCookie(name) {
+    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+}
 
 // --- Function to get URL parameters ---
 function getUrlParameter(name) {
@@ -601,6 +627,15 @@ document.addEventListener('DOMContentLoaded', () => {
         indentWithTabs: false
     });
 
+    // --- Load saved solution from cookie if exists ---
+    const savedSolution = getCookie(CONFIG.COOKIE_NAME);
+    if (savedSolution) {
+        editor.setValue(savedSolution);
+        if (CONFIG.isDevelopment) {
+            console.log('Loaded saved solution from cookie');
+        }
+    }
+
     // --- Handle the Check button click ---
     checkButton.addEventListener('click', () => {
         // 1. Get student's text from CodeMirror editor
@@ -649,6 +684,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Handle the Submit button click ---
     submitButton.addEventListener('click', () => {
+        // Save the student solution to cookie
+        const studentText = editor.getValue();
+        setCookie(CONFIG.COOKIE_NAME, studentText, CONFIG.COOKIE_EXPIRY_DAYS);
+        
+        if (CONFIG.isDevelopment) {
+            console.log('Student solution saved to cookie');
+        }
         
         const hash = CryptoJS.MD5(expectedSolutionText.trim()).toString(); // Calculate MD5 hash
         console.log("MD5 Hash of Solution:", hash); // Log the hash
