@@ -1,0 +1,192 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Serie {
+    id_serie key
+    titulo
+    sinopsis
+    fecha_lanzamiento
+    estado
+}
+
+entity Productora {
+    id_prod key
+    nombre
+    url
+}
+
+relationship producida_por {
+    Serie [1..N] -> Productora [1..N]
+
+}
+
+///
+
+entity Genero {
+    id_genero key
+    nombre
+    descripcion
+}
+
+relationship clasificada_como {
+    Serie [0..N] -> Genero [1..N]
+}
+
+entity Clasificacion_Edad {
+    id_clasificacion key
+    edad_minima
+}
+
+relationship tiene_clasificacion {
+    Serie [0..N] -> Clasificacion_Edad [1..1]
+}
+
+
+//
+
+weak entity Temporada {
+    num_temporada partial-key         
+    novedades
+}
+
+weak relationship pertenece_a {
+    Serie [1..1] -> Temporada [1..N]
+}
+
+//
+
+weak entity Episodio {
+    num_epi partial-key
+    titulo
+    fecha_primera_emision
+    duracion
+    sinopsis
+}
+
+weak relationship contiene {
+    Temporada [1..1] -> Episodio [1..N]
+}
+
+//
+
+entity Idioma {
+    id_idioma key           
+    nombre
+}
+
+relationship audio_disponible {
+    Episodio [0..N] -> Idioma [1..N]
+}
+
+relationship subtitulos_disponibles {
+    Episodio [0..N] -> Idioma [0..N]
+}
+
+//
+
+entity Persona {
+    id_persona key
+    nombre
+    apellido
+    fecha_nacimiento
+    nacionalidad
+    bio
+}
+
+//total, solapada
+entity Creador extends Persona {
+    id_persona key
+}
+
+relationship ha_creado {
+    Creador [1..N] -> Serie [1..N] 
+}
+
+//total, solapada
+entity Director extends Persona {
+    id_persona key
+}
+
+relationship dirige_episodio {
+    Director [1..N] -> Episodio [1..N] 
+}
+
+//total, solapada
+entity Interprete extends Persona {
+    id_persona key
+    nombre_artistico
+}
+
+entity Personaje {    
+    id_personaje key
+    nombre
+    descripcion 
+}
+
+relationship actuacion {
+    Interprete[1..N] -> Personaje[1..N] -> Episodio[1..N]
+    minutos
+    version_del_personaje
+}
+
+entity Plataforma {
+    id_plataforma key
+    nombre_comercial
+    url
+}
+
+weak entity DerechoEmision {
+    fecha_inicio partial-key
+    fecha_fin
+}
+
+weak relationship licencia_plataforma {
+    Plataforma [1..1] -> DerechoEmision [1..N]
+}
+
+weak relationship derechos_serie {
+    DerechoEmision [1..N] -> Serie [1..1] 
+}
+
+//
+
+entity Usuario {
+    id_usuario key
+    email
+    nombre_usuario
+}
+
+relationship favorita {
+    Usuario [0..N] -> Plataforma [0..N]
+}
+
+relationship valora_serie {
+    Usuario [0..N] -> Serie [0..N]
+    puntuacion
+    comentario
+}
+
+relationship valora_episodio {
+    Usuario [0..N] -> Episodio [0..N]
+    puntuacion
+}
+
+weak entity Lista {
+    numero_lista partial-key
+    nombre
+    descripcion
+}
+
+weak relationship crea_lista {
+    Usuario [1..1] -> Lista [0..N]
+}
+
+relationship incluye_serie {
+    Lista [0..N] -> Serie [0..N]
+}
+
+relationship compartida_con {
+    Lista [0..N] -> Usuario [0..N]
+}
+
+
