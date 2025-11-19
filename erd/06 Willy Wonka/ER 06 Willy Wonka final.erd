@@ -160,5 +160,5 @@ entity Factura {
 }
 
 relationship incluido_en {
-    Pedido_Entregado[1..N] -> Factura[0..1]
+    Pedido_Entregado[1..N] -> Factura[1..1]
 }
