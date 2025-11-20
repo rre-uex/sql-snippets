@@ -1,0 +1,16 @@
+erdiagram MapeoER01_EntidadRegular
+notation=crowsfoot
+
+entity P {
+    clave_P key
+    resto_atributos_propietaria
+}
+
+weak entity D {
+    clave_parcial_D partial-key
+    resto_atributos_debil
+}
+
+weak relationship relacion_debil {
+    P[1..1] -> D[0..N]     
+}

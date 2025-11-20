@@ -41,7 +41,7 @@ entity Calificacion_Por_Edades {
 }
 
 relationship calificacion_recomendada {
-    Videojuego[1..N] -> Calificacion_Por_Edades[1..1]
+    Videojuego[0..N] -> Calificacion_Por_Edades[1..1]
 }
 
 //

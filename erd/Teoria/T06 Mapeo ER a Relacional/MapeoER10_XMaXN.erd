@@ -1,0 +1,20 @@
+// header (required)
+erdiagram SegundoEjemplo
+
+// notation (optional)
+notation=crowsfoot
+
+// model elements
+entity E1 { 
+    id_E1 key
+    resto_atributos_E1 }
+
+entity E2 { 
+    id_E2 key 
+    resto_atributos_E2
+    }
+
+relationship RE1E2 {
+    E1[1..N] -> E2[1..N]
+    atributos_RE1E2 
+    }  

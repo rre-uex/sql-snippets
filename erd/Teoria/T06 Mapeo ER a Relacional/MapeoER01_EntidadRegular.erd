@@ -1,0 +1,8 @@
+erdiagram MapeoER01_EntidadRegular
+notation=crowsfoot
+
+entity E {
+    atributo_clave key
+    atributo_clave_alternativa // UNIQUE
+    resto_atributos
+}

@@ -1,0 +1,20 @@
+// header (required)
+erdiagram SegundoEjemplo
+
+// notation (optional)
+notation=crowsfoot
+
+// model elements
+entity G { 
+    id_G key
+    atributos_comunes }
+
+entity E1 extends G { 
+    id_G key 
+    atributos_exclusivos_E1
+    }
+
+entity E2 extends G { 
+    id_G key 
+    atributos_exclusivos_E2
+    }
