@@ -153,3 +153,12 @@ relationship clasificadoComo{
     Medicamento[1..N] -> Tipo_Medicamento[1..N]
 }
 
+entity Laboratorio {
+    CIF key
+    nombre
+    direccion
+}
+
+relationship fabricado_por {
+    Medicamento[1..N] -> Laboratorio[1..1]
+}
