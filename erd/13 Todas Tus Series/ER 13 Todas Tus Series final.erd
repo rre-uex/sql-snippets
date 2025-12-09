@@ -10,7 +10,7 @@ entity Serie {
 }
 
 entity Productora {
-    id_prod key
+    id_productora key
     nombre
     url
 }
@@ -45,7 +45,7 @@ relationship tiene_clasificacion {
 //
 
 weak entity Temporada {
-    num_temporada partial-key         
+    numero_temporada partial-key         
     novedades
 }
 
@@ -56,7 +56,7 @@ weak relationship pertenece_a {
 //
 
 weak entity Episodio {
-    num_epi partial-key
+    numero_episodio partial-key
     titulo
     fecha_primera_emision
     duracion
@@ -135,17 +135,17 @@ entity Plataforma {
     url
 }
 
-weak entity DerechoEmision {
+weak entity Derechos_Emision {
     fecha_inicio partial-key
     fecha_fin
 }
 
 weak relationship licencia_plataforma {
-    Plataforma [1..1] -> DerechoEmision [1..N]
+    Plataforma [1..1] -> Derechos_Emision [1..N]
 }
 
 weak relationship derechos_serie {
-    DerechoEmision [1..N] -> Serie [1..1] 
+    Derechos_Emision [1..N] -> Serie [1..1] 
 }
 
 //

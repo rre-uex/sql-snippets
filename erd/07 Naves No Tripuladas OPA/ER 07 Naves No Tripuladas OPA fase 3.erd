@@ -1,12 +1,6 @@
 erdiagram Model
 notation=crowsfoot
 
-entity Empleado {
-    numero_empleado key
-    nombre
-    apellidos
-    categoria_profesional
-}
 
 entity Nave {
     codigo_nave key
@@ -34,21 +28,28 @@ relationship completada_por {
     fecha_fin
 }
 
+relationship evoluciona_de {
+    Nave[0..1 | "original"] -> Nave[0..N | "derivado"]
+}
 
 //
 
+entity Empleado {
+    numero_empleado key
+    nombre
+    apellidos
+    categoria_profesional
+}
+
 //parcial,disjunta
 entity Ingeniero_Aeroespacial extends Empleado {
-    numEmpleado key
+    numero_Empleado key
 }
 
 relationship responsable_de {
     Nave[1..1] -> Ingeniero_Aeroespacial[1..1]
 }
 
-relationship evoluciona_de {
-    Nave[0..1 | "original"] -> Nave[0..N | "derivado"]
-}
 
 //
 

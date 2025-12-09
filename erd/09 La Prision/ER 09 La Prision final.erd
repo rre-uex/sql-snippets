@@ -52,7 +52,7 @@ entity Visitante{
     apellido2
 }
 
-weak relationship incluyo{
+relationship incluyo{
     Visita[1..N] -> Visitante[1..N]
     relacion_interno
 }
@@ -106,11 +106,11 @@ weak entity Revision{
     tratamiento
 }
 
-weak relationship paso{
+weak relationship es_pasada_por{
     Revision[1..N] -> Interno[1..1]
 }
 
-relationship realizada_por{
+relationship es_realizada_por{
     Revision[0..N] -> Personal_De_Tratamiento[1..1]
 }
 

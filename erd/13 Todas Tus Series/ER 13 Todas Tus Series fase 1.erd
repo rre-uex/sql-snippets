@@ -10,7 +10,7 @@ entity Serie {
 }
 
 entity Productora {
-    id_prod key
+    id_productora key
     nombre
     url
 }
