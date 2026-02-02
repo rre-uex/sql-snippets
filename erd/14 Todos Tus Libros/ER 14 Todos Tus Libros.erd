@@ -1,0 +1,150 @@
+erdiagram model
+notation=crowsfoot
+
+//no hacemos subclase de libro porque necesitamos saber 
+//el autor que escribio un libro, independientemente de si
+//es original o traduccion y solo crear la subclase parcial
+// libro traducido tampoco tiene mucho sentido dado que un
+// libro puede ser traducción de otra traducción y habría
+// que crear 2 relaciones desde libro traducido, una consigo misma
+// y otra de libro traducido a libro.
+
+entity Libro {
+    id_libro key
+    titulo
+    sinopsis
+    fecha_publicacion
+}
+
+entity Genero {
+    id_genero key
+    nombre
+}
+
+relationship se_clasifica_en {
+    Libro[0..N] -> Genero[1..N]
+}
+
+entity Idioma {
+    id_idioma key
+    nombre_idioma
+}
+
+relationship esta_en_idioma {
+    Libro[0..N] -> Idioma[1..1]
+}
+
+relationship es_traduccion_de {
+    Libro[0..N | "Traduccion"] -> Libro[0..1 | "Traducido"]
+}
+
+entity Profesional_Literario {
+    id_profesional key
+    nombre
+    apellidos
+    biografia
+}
+
+//total, solapada
+entity Autor extends Profesional_Literario {
+    id_profesional key
+}
+
+relationship escribe {
+    Autor[0..N] -> Libro[1..N]
+}
+
+relationship es_especialista_en {
+    Autor[0..N] -> Genero[0..N]
+}
+
+//total, solapada
+entity Traductor extends Profesional_Literario {
+    id_profesional key
+}
+
+relationship traduce {
+    Traductor[0..N] -> Libro[1..N] 
+}
+
+relationship experto_en {
+    Traductor[0..N] -> Idioma[1..N]
+}
+
+entity Edicion_Fisica {
+    isbn key
+    precio
+    fecha_lanzamiento
+    numero_paginas
+    dimensiones
+}
+
+relationship tiene_edicion {
+    Libro[1..1] -> Edicion_Fisica[0..N]
+}
+
+entity Editorial {
+    CIF key
+    nombre //UNIQUE
+    email
+    telefono
+}
+
+relationship publicada_por {
+    Edicion_Fisica[0..N] -> Editorial[1..1]
+}
+
+entity Usuario {
+    nif key
+    nombre_completo
+    contrasena
+    email
+    telefono
+}
+
+entity Libreria {
+    cif key
+    nombre
+    telefono
+    direccion
+    email
+}
+
+relationship stock_disponible {
+    Libreria[0..N] -> Edicion_Fisica[0..N]
+    cantidad
+}
+
+entity Reserva {
+    id_reserva key
+    fecha_reserva
+}
+
+relationship realiza {
+    Usuario[1..1] -> Reserva[0..N]
+}
+
+relationship gestionada_en {
+    Reserva[0..N] -> Libreria[1..1]
+}
+
+weak entity Linea_Reserva {
+    num_linea partial-key
+    cantidad
+}
+
+weak relationship contiene_lineas {
+    Reserva[1..1] -> Linea_Reserva[1..N]
+}
+
+relationship reserva_de_edicion {
+    Linea_Reserva[0..N] -> Edicion_Fisica[1..1]
+}
+
+relationship valora {
+    Usuario[0..N] -> Libro[0..N]
+    puntuacion
+    comentario
+    fecha
+}
+

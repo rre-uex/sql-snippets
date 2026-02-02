@@ -1,0 +1,134 @@
+erdiagram model
+notation=crowsfoot
+
+entity Obra_Musical {
+    iswc key
+    titulo_obra
+    partitura
+    letra
+    fecha_registro_intelectual
+}
+
+entity Grabacion {
+    isrc key
+    titulo_grabacion
+    duracion_seg
+    fecha_lanzamiento
+}
+
+relationship se_basa_en {
+    Grabacion[1..N] -> Obra_Musical[1..1]
+}
+
+relationship es_derivada_de {
+    Grabacion[0..N | "Derivada"] -> Grabacion[0..1 | "Original"]
+    tipo_derivacion 
+}
+
+entity Album {
+    upc key
+    titulo
+    fecha_publicacion
+    portada
+}
+
+relationship incluida_en {
+    Grabacion[1..N] -> Album[1..N]
+    numero_pista
+}
+
+entity Profesional_Musical {
+    codigo_profesional key
+    nombre_completo
+    nacionalidad
+}
+
+//total,solapada
+entity Compositor extends Profesional_Musical {
+    codigo_profesional key
+}
+
+//total,solapada
+entity Artista extends Profesional_Musical {
+    codigo_profesional key
+    nombre_artistico //UNIQUE
+    biografia
+}
+
+relationship compone {
+    Compositor[1..N] -> Obra_Musical[1..N]
+}
+
+relationship realiza {
+    Artista[1..1] -> Grabacion[1..N]
+}
+
+entity Genero {
+    id_genero key
+    nombre
+}
+
+relationship se_clasifica_en {
+    Grabacion[0..N] -> Genero[1..N]
+}
+
+entity Usuario {
+    nombre_usuario key
+    password
+    email //UNIQUE
+}
+
+entity Plan_Suscripcion {
+    nombre_plan key
+    precio
+    ventajas
+}
+
+relationship suscrito_a {
+    Usuario[0..N] -> Plan_Suscripcion[1..1]
+    fecha_inicio
+}
+
+relationship es_favorito_de {
+    Genero[0..N] -> Usuario[0..N]
+}
+
+relationship sigue_a {
+    Usuario[0..N] -> Artista[0..N]
+}
+
+relationship gusta {
+    Usuario[0..N] -> Grabacion[0..N]
+}
+
+entity Playlist {
+    codigo_playlist key
+    nombre
+}
+
+relationship crea {
+    Usuario[1..1] -> Playlist[0..N]
+}
+
+relationship contiene_grabacion {
+    Playlist[0..N] -> Grabacion[1..N]
+    posicion
+}
+
+relationship compartida_con {
+    Playlist[0..N] -> Usuario[0..N]
+}
+
+weak entity Reproduccion{
+    fecha_inicio partial-key
+    hora_inicio partial-key
+    duracion
+}
+
+weak relationship registro_de {
+    Usuario[1..1] -> Reproduccion[0..N]
+}
+
+weak relationship de_una_grabacion {
+    Reproduccion[0..N] -> Grabacion[1..1]
+}
