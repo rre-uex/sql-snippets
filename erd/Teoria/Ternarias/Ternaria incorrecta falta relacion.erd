@@ -3,19 +3,19 @@
 erdiagram Model
 notation=crowsfoot
 
-entity PROVEEDOR {
+entity Proveedor {
 id_proveedor key
 }
 
-entity PROYECTO {
+entity Proyecto {
 id_proyecto key
 }
 
-entity REPUESTO {
+entity Repuesto {
 id_repuesto key
 }
 
 relationship suministra {
-PROVEEDOR[1..N] -> REPUESTO[1..N] //- Problem in Relationship "suministra": Expected 2 links, but found 1.
+Proveedor[1..N] -> Proyecto[1..N]  //- Problem in Relationship "suministra": Expected 2 links, but found 1.
 cantidad
 }

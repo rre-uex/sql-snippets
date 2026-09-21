@@ -1,0 +1,28 @@
+erdiagram Model
+notation=crowsfoot
+
+entity Estudiante {  
+numero_expediente key
+nombre  
+apellido_1  
+apellido_2  
+}
+
+entity Titulacion {
+codigo key
+nombre
+}
+
+relationship matriculado_en {
+Estudiante[1..N] -> Titulacion[1..1]
+fecha_matriculacion
+}
+
+weak entity Asignatura {
+codigo_asignatura partial-key //atributo aportado a la clave primaria por la entidad débil Asignatura
+nombre
+}
+
+weak relationship compuesta_de {
+Titulacion[1..1] -> Asignatura[1..N]
+}

@@ -93,8 +93,9 @@ entity Persona {
     bio
 }
 
-//total, solapada
-entity Creador extends Persona {
+hierarchy h_persona Persona total overlapping
+
+entity Creador extends h_persona {
     id_persona key
 }
 
@@ -102,8 +103,7 @@ relationship ha_creado {
     Creador [1..N] -> Serie [1..N] 
 }
 
-//total, solapada
-entity Director extends Persona {
+entity Director extends h_persona {
     id_persona key
 }
 
@@ -111,8 +111,7 @@ relationship dirige_episodio {
     Director [1..N] -> Episodio [1..N] 
 }
 
-//total, solapada
-entity Interprete extends Persona {
+entity Interprete extends h_persona {
     id_persona key
     nombre_artistico
 }
@@ -188,5 +187,4 @@ relationship incluye_serie {
 relationship compartida_con {
     Lista [0..N] -> Usuario [0..N]
 }
-
 

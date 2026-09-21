@@ -2,16 +2,16 @@ erdiagram Expanse01
 notation=crowsfoot
 
 entity Planeta { 
-codPlaneta key 
+codigo key 
 nombre
-numLunas 
-rotacionHoras
-orbitaDias
+numero_lunas 
+rotacion_horas
+orbita_dias
 } 
 
 entity Centro { 
-codCentro key 
-nomCentro 
+codigo key 
+nombre 
 coordenadas 
-fechaCreacion
+fecha_creacion
 } 

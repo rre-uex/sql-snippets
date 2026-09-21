@@ -7,7 +7,7 @@ entity Interno{
     nombre
     apellido1
     apellido2
-    dni //UNIQUE
+    dni unique
     fecha_nacimiento
     foto_interno
     fecha_ingreso
@@ -46,7 +46,7 @@ weak relationship recibio{
 
 entity Visitante{
     codigo_visitante key
-    dni_visitante //UNIQUE
+    dni_visitante unique
     nombre
     apellido1
     apellido2
@@ -59,7 +59,7 @@ relationship incluyo{
 
 entity Personal {    
     nif key
-    nss //UNIQUE
+    nss unique
     nombre
     apellido1
     apellido2
@@ -67,14 +67,14 @@ entity Personal {
     categoria
 }   
 
-//parcial,disjunta
-entity Personal_De_Regimen extends Personal{
+hierarchy h_personal Personal partial disjoint
+
+entity Personal_De_Regimen extends h_personal{
     nif key
     turno
 }
 
-//parcial, disjunta
-entity Personal_De_Tratamiento extends Personal{
+entity Personal_De_Tratamiento extends h_personal{
     nif key
     especialidad
 }
@@ -121,13 +121,13 @@ entity Actividad{
     descripcion
 }
 
-//total, disjunta
-entity Actividad_Permanente extends Actividad{
+hierarchy h_actividad Actividad total disjoint
+
+entity Actividad_Permanente extends h_actividad{
     codigo_actividad key
 }
 
-//total, disjunta
-entity Actividad_Temporal extends Actividad{
+entity Actividad_Temporal extends h_actividad{
     codigo_actividad key
     fecha_inicio
     fecha_fin

@@ -2,18 +2,18 @@ erdiagram Model
 notation=crowsfoot
 
 entity Estudiante {  
-numExpediente key
+numero_expediente key
 nombre  
-apellido1  
-apellido2  
+apellido_1  
+apellido_2  
 }
 
 entity Titulacion {
-codTitulacion key
+codigo key
 nombre
 }
 
-relationship matriculadoEn {
+relationship matriculado_en {
 Estudiante[1..N] -> Titulacion[1..1]
-fechaMatriculacion
+fecha_matriculacion
 }

@@ -9,7 +9,7 @@ entity Municipio {
 entity Farmacia {
     IOF key
     nombre_farmacia
-    CIF //UNIQUE
+    CIF unique
     direccion_farmacia
     cuenta_bancaria
 }
@@ -42,21 +42,21 @@ entity Persona {
     CIP key
     nombre
     apellidos
-    NIF //UNIQUE
+    NIF unique
     fecha_nacimiento
     sexo
     telefono_persona
 }
 
-//total,solapada
-entity Medico extends Persona {
+hierarchy h_persona Persona total overlapping
+
+entity Medico extends h_persona {
     CIP key
-    numero_colegiado //UNIQUE
+    numero_colegiado unique
     especialidad
 }
 
-//total,solapada
-entity Paciente extends Persona {
+entity Paciente extends h_persona {
     CIP key
 }
 

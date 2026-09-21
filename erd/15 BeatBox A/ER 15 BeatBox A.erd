@@ -43,15 +43,15 @@ entity Profesional_Musical {
     nacionalidad
 }
 
-//total,solapada
-entity Compositor extends Profesional_Musical {
+hierarchy h_profesional_musical Profesional_Musical total overlapping
+
+entity Compositor extends h_profesional_musical {
     codigo_profesional key
 }
 
-//total,solapada
-entity Artista extends Profesional_Musical {
+entity Artista extends h_profesional_musical {
     codigo_profesional key
-    nombre_artistico //UNIQUE
+    nombre_artistico unique
     biografia
 }
 
@@ -75,7 +75,7 @@ relationship se_clasifica_en {
 entity Usuario {
     nombre_usuario key
     password
-    email //UNIQUE
+    email unique
 }
 
 entity Plan_Suscripcion {

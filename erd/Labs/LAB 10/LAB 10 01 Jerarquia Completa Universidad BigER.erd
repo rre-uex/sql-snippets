@@ -2,20 +2,17 @@ erdiagram Model
 
 notation=crowsfoot
 
-entity PersonaUEX {
+entity Persona_UEX {
 nif key
 }
 
-//total,solapada
-entity Empleado extends  PersonaUEX {
+hierarchy h_persona_uex Persona_UEX total overlapping
+
+entity Empleado extends h_persona_uex {
 nif key
 }
 
-//total, solapada
-entity Estudiante extends  PersonaUEX {
+entity Estudiante extends h_persona_uex {
 nif key
 }
-
-
-
 

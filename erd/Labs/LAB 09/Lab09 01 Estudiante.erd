@@ -2,8 +2,8 @@ erdiagram Model
 notation=crowsfoot
 
 entity Estudiante {  
-numExpediente key
+numero_expediente key
 nombre  
-apellido1  
-apellido2  
+apellido_1  
+apellido_2  
 }

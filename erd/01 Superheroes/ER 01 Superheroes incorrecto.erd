@@ -3,13 +3,13 @@ notation=crowsfoot
 
 // Entidades
 entity Superheroe {
-    nombreSuperheroe key  
+    nombre_superheroe key  
     fecha
 }
 
 weak entity Planeta {
     cod_planeta key  //L10 Indicar como débil una entidad que _no_ tiene dependencia de identificación y L11 Indicar como débil una entidad que _no_ tiene dependencia de existencia.
-    nombrePlaneta
+    nombre_planeta
     sistema_planetario
     coordenadas
     superheroe_coordinador // L6 Incluir un atributo redundante que representa información ya capturada por una relación existente.
@@ -20,7 +20,7 @@ entity Superpoder {
     descripcion
 }
 
-entity TipoMision {
+entity Tipo_Mision {
     cod_mision key  
     descripcion
     grado_dificultad
@@ -47,16 +47,16 @@ relationship responsableDe {
     Superheroe[0..1 | "Superior" ] -> Superheroe[0..N] // L5 No indicar los roles en una relación recursiva.
 }
 
-entity MisionRealizada { //L12 Indicar como fuerte una entidad que _sí_ cumple las condiciones para ser débil (dependencia de existencia e identificación).
+entity Mision_Realizada { //L12 Indicar como fuerte una entidad que _sí_ cumple las condiciones para ser débil (dependencia de existencia e identificación).
     fecha_realizacion partial-key
 }
 
-relationship haRealizado { //L16 No indicar una relación débil entre una entidad débil y la entidad fuerte de la que depende.
-    MisionRealizada[0..N] -> Superheroe[1..1]     
+relationship ha_realizado { //L16 No indicar una relación débil entre una entidad débil y la entidad fuerte de la que depende.
+    Mision_Realizada[0..N] -> Superheroe[1..1]     
 }
 
 weak relationship categorizadaComo {
-    MisionRealizada[0..N] -> TipoMision[1..1] 
+    Mision_Realizada[0..N] -> Tipo_Mision[1..1] 
 }
 
 relationship es_poseido_por {

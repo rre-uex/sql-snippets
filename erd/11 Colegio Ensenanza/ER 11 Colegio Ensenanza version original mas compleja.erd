@@ -11,8 +11,9 @@ entity Estudiante {
     fecha_nacimiento
 }
 
-//parcial
-entity Estudiante_Especial extends Estudiante {
+hierarchy h_estudiante Estudiante partial
+
+entity Estudiante_Especial extends h_estudiante {
     numero_expediente key
     descripcion
     atencion_especial
@@ -27,14 +28,14 @@ entity Persona {
     direccion
 }
 
-//total,solapada
-entity Tutora extends Persona{
+hierarchy h_persona Persona total overlapping
+
+entity Tutora extends h_persona{
     nif key
     profesion
 }
 
-//total,solapada
-entity Docente extends Persona{
+entity Docente extends h_persona{
     nif key
     salario
     cuenta 
@@ -120,14 +121,4 @@ relationship organiza {
 relationship seImpartenEn {
     Asignatura[1..1] -> AsignaturasCurso[1..N]
 }
-
-
-
-
-
-
-
-
-
-
 

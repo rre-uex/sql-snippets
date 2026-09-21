@@ -45,8 +45,9 @@ entity Profesional_Literario {
     biografia
 }
 
-//total, solapada
-entity Autor extends Profesional_Literario {
+hierarchy h_profesional_literario Profesional_Literario total overlapping
+
+entity Autor extends h_profesional_literario {
     id_profesional key
 }
 
@@ -58,8 +59,7 @@ relationship es_especialista_en {
     Autor[0..N] -> Genero[0..N]
 }
 
-//total, solapada
-entity Traductor extends Profesional_Literario {
+entity Traductor extends h_profesional_literario {
     id_profesional key
 }
 
@@ -85,7 +85,7 @@ relationship tiene_edicion {
 
 entity Editorial {
     CIF key
-    nombre //UNIQUE
+    nombre unique
     email
     telefono
 }

@@ -9,12 +9,14 @@ entity G {
     id_G key
     atributos_comunes }
 
-entity E1 extends G { 
+hierarchy h_g G total disjoint
+
+entity E1 extends h_g { 
     id_G key 
     atributos_exclusivos_E1
     }
 
-entity E2 extends G { 
+entity E2 extends h_g { 
     id_G key 
     atributos_exclusivos_E2
     }

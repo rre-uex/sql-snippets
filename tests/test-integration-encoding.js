@@ -1,11 +1,23 @@
 /**
  * Test de Integración: Codificación Base64 + Validación ERD
- * 
+ *
  * Este test verifica que el proceso completo funciona:
  * 1. Leer archivo .erd
  * 2. Codificar a base64 (como encode-erd.js)
  * 3. Decodificar (como app.js)
  * 4. Comparar soluciones (validación)
+ *
+ * Criterio de los casos con errores:
+ *
+ *   No se comprueba el NUMERO de errores, sino que se detecten los
+ *   errores concretos que cada caso pretende ejercitar. Contar errores
+ *   hace el test fragil: cualquier mejora en la redaccion de un mensaje
+ *   lo rompe sin que nada este realmente mal, y un numero como "43
+ *   errores" no documenta que se esta probando.
+ *
+ *   Cada caso declara en "mustDetect" una lista de comportamientos con
+ *   el patron que los identifica. Si alguno no aparece, el test falla
+ *   diciendo exactamente que comprobacion se ha perdido.
  */
 
 const fs = require('fs');
@@ -18,332 +30,18 @@ const colors = {
     red: '\x1b[31m',
     yellow: '\x1b[33m',
     blue: '\x1b[36m',
+    grey: '\x1b[90m',
     bold: '\x1b[1m'
 };
 
-// ============================================================================
-// PARSER REAL DE app.js - Función completa copiada desde app.js
-// ============================================================================
-function parseERD(text) {
-    const erd = {
-        entities: [],
-        relationships: []
-    };
-
-    // Clean up text: remove block comments but keep line comments (we need //UNIQUE)
-    const cleanText = text.replace(/\/\*[\s\S]*?\*\//g, '').trim();
-
-    // Regex to find entities (including weak ones) with possible preceding comment
-    const entityRegex = /(?:\/\/([^\n]*)\n\s*)?(weak\s+)?entity\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{([\s\S]*?)\}/g;
-    let match;
-
-    // --- Parse Entities ---
-    while ((match = entityRegex.exec(cleanText)) !== null) {
-        const precedingComment = match[1] ? match[1].trim() : null;
-        const isWeak = !!match[2];
-        const name = match[3];
-        const extendsFrom = match[4] || null;
-        const body = match[5];
-
-        const entity = {
-            name: name,
-            isWeak: isWeak,
-            extendsFrom: extendsFrom,
-            specialization: null,
-            attributes: []
-        };
-
-        // Parse specialization comment (parcial/total, solapada/disjunta)
-        if (precedingComment) {
-            const specializationMatch = precedingComment.match(/^\s*(parcial|total)(?:\s*,\s*(solapada|disjunta))?\s*$/i);
-            if (specializationMatch) {
-                entity.specialization = {
-                    completeness: specializationMatch[1].toLowerCase(),
-                    overlap: specializationMatch[2] ? specializationMatch[2].toLowerCase() : null
-                };
-            }
-        }
-
-        // Parse attributes within the entity body
-        const lines = body.trim().split('\n');
-        for (const line of lines) {
-            const attrLine = line.trim();
-            if (attrLine) {
-                const hasUniqueComment = /\/\/\s*UNIQUE/.test(attrLine);
-                const attrMatch = attrLine.match(/^(\w+)\s*(:\s*\w+)?\s*(key|partial-key|derived)?/);
-                if (attrMatch) {
-                    entity.attributes.push({
-                        name: attrMatch[1],
-                        isKey: attrMatch[3] === 'key',
-                        isPartialKey: attrMatch[3] === 'partial-key',
-                        isUnique: hasUniqueComment
-                    });
-                }
-            }
-        }
-        erd.entities.push(entity);
-    }
-    
-    // --- Parse Relationships ---
-    const relRegex = /(weak\s+)?relationship\s+(\w+)\s*\{([\s\S]*?)\}/g;
-
-    while ((match = relRegex.exec(cleanText)) !== null) {
-        const isWeak = !!match[1];
-        const name = match[2];
-        const body = match[3];
-
-        const relationship = {
-            name: name,
-            isWeak: isWeak,
-            links: [],
-            attributes: []
-        };
-
-        // Parse links and attributes within the relationship body
-        const lines = body.trim().split('\n');
-        for (const line of lines) {
-            const linkLine = line.replace(/\/\/(?!UNIQUE).*/g, '').trim();
-            const arrowCount = (linkLine.match(/->/g) || []).length;
-            
-            if (arrowCount > 0) {
-                const segments = linkLine.split('->').map(s => s.trim());
-                
-                for (let i = 0; i < segments.length - 1; i++) {
-                    const fromPart = segments[i];
-                    const toPart = segments[i + 1];
-                    
-                    const fromMatch = fromPart.match(/(\w+)\s*(\[[^\]]*\])?$/);
-                    const toMatch = toPart.match(/^(\w+)\s*(\[[^\]]*\])?/);
-                    
-                    if (!fromMatch || !toMatch) {
-                        throw new Error(`Invalid link syntax in relationship "${name}": "${linkLine}".`);
-                    }
-                    
-                    if (fromMatch && toMatch) {
-                        const parseCardinalityAndRole = (bracketContent) => {
-                            if (!bracketContent) return { cardinality: '1', role: null };
-                            const cleaned = bracketContent.replace(/[\[\]]/g, '');
-                            const parts = cleaned.split('|').map(p => p.trim());
-                            return {
-                                cardinality: parts[0],
-                                role: parts[1] ? parts[1].replace(/['"]/g, '') : null
-                            };
-                        };
-                        
-                        const fromData = parseCardinalityAndRole(fromMatch[2]);
-                        const toData = parseCardinalityAndRole(toMatch[2]);
-                        
-                        relationship.links.push({
-                            from: fromMatch[1],
-                            fromCardinality: fromData.cardinality,
-                            fromRole: fromData.role,
-                            to: toMatch[1],
-                            toCardinality: toData.cardinality,
-                            toRole: toData.role
-                        });
-                    }
-                }
-            } else if (linkLine && !linkLine.match(/[{}]/)) {
-                const attrMatch = linkLine.match(/^(\w+)/);
-                if (attrMatch) {
-                    relationship.attributes.push({
-                        name: attrMatch[1]
-                    });
-                }
-            }
-        }
-        erd.relationships.push(relationship);
-    }
-    
-    return erd;
-}
-
-// ============================================================================
-// FUNCIÓN DE COMPARACIÓN REAL DE app.js - Función completa copiada desde app.js
-// ============================================================================
-function compareSolutions(student, expected) {
-    const errors = [];
-    
-    const findByName = (arr, name) => arr.find(item => item.name === name);
-
-    // --- Check Entities ---
-    if (student.entities.length !== expected.entities.length) {
-        errors.push(`Problem: Expected ${expected.entities.length} entities, but found ${student.entities.length}.`);
-    }
-
-    for (const expEntity of expected.entities) {
-        const stuEntity = findByName(student.entities, expEntity.name);
-        if (!stuEntity) {
-            errors.push(`Missing Entity: The entity "${expEntity.name}" is missing.`);
-            continue;
-        }
-
-        if (expEntity.isWeak && !stuEntity.isWeak) {
-            errors.push(`Incorrect Entity Type: The entity "${expEntity.name}" should be marked as weak.`);
-        }
-        if (!expEntity.isWeak && stuEntity.isWeak) {
-            errors.push(`Incorrect Entity Type: The entity "${expEntity.name}" should NOT be marked as weak.`);
-        }
-
-        // Check extends (inheritance)
-        if (expEntity.extendsFrom !== stuEntity.extendsFrom) {
-            if (expEntity.extendsFrom && !stuEntity.extendsFrom) {
-                errors.push(`Incorrect Entity: The entity "${expEntity.name}" should extend "${expEntity.extendsFrom}".`);
-            } else if (!expEntity.extendsFrom && stuEntity.extendsFrom) {
-                errors.push(`Incorrect Entity: The entity "${expEntity.name}" should NOT extend any entity.`);
-            } else {
-                errors.push(`Incorrect Entity: The entity "${expEntity.name}" should extend "${expEntity.extendsFrom}" but extends "${stuEntity.extendsFrom}".`);
-            }
-        }
-
-        // Check specialization (parcial/total, solapada/disjunta) for entities with extends
-        if (expEntity.extendsFrom) {
-            const expSpec = expEntity.specialization;
-            const stuSpec = stuEntity.specialization;
-
-            if (expSpec) {
-                if (!stuSpec) {
-                    const expectedComment = expSpec.overlap 
-                        ? `//${expSpec.completeness},${expSpec.overlap}` 
-                        : `//${expSpec.completeness}`;
-                    errors.push(`Missing Specialization Comment: The entity "${expEntity.name}" should have the comment "${expectedComment}" before its declaration.`);
-                } else {
-                    // Verificar completeness (parcial/total) primero
-                    if (expSpec.completeness !== stuSpec.completeness) {
-                        errors.push(`Incorrect Specialization in "${expEntity.name}": Expected "${expSpec.completeness}" but found "${stuSpec.completeness}".`);
-                    } else {
-                        // Solo verificar overlap si completeness es correcto
-                        if (expSpec.overlap !== stuSpec.overlap) {
-                            if (expSpec.overlap && !stuSpec.overlap) {
-                                errors.push(`Incorrect Specialization in "${expEntity.name}": "${expSpec.completeness}" is correct but missing "${expSpec.overlap}".`);
-                            } else if (!expSpec.overlap && stuSpec.overlap) {
-                                errors.push(`Incorrect Specialization in "${expEntity.name}": Should only have "${expSpec.completeness}", not "${stuSpec.overlap}".`);
-                            } else {
-                                errors.push(`Incorrect Specialization in "${expEntity.name}": "${expSpec.completeness}" is correct but "${stuSpec.overlap}" is incorrect, should be "${expSpec.overlap}".`);
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            // Si NO tiene extends, NO debería tener comentario de especialización
-            if (stuEntity.specialization) {
-                const stuSpec = stuEntity.specialization;
-                const incorrectComment = stuSpec.overlap 
-                    ? `//${stuSpec.completeness},${stuSpec.overlap}` 
-                    : `//${stuSpec.completeness}`;
-                errors.push(`Incorrect Specialization Comment: The entity "${expEntity.name}" does not extend any entity and should NOT have the comment "${incorrectComment}" before its declaration.`);
-            }
-        }
-
-        if (expEntity.attributes.length !== stuEntity.attributes.length) {
-            errors.push(`Problem in Entity "${expEntity.name}": Expected ${expEntity.attributes.length} attributes, but found ${stuEntity.attributes.length}.`);
-        }
-
-        for (const expAttr of expEntity.attributes) {
-            const stuAttr = findByName(stuEntity.attributes, expAttr.name);
-            if (!stuAttr) {
-                errors.push(`Missing Attribute in "${expEntity.name}": The attribute "${expAttr.name}" is missing.`);
-            } else {
-                if (expAttr.isKey && !stuAttr.isKey) {
-                    errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should be a key.`);
-                }
-                if (!expAttr.isKey && stuAttr.isKey) {
-                    errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should NOT be a key.`);
-                }
-                if (expAttr.isPartialKey && !stuAttr.isPartialKey) {
-                     errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should be a partial-key.`);
-                }
-                if (!expAttr.isPartialKey && stuAttr.isPartialKey) {
-                     errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should NOT be a partial-key.`);
-                }
-                if (expAttr.isUnique && !stuAttr.isUnique) {
-                     errors.push(`Incorrect Unique constraint in "${expEntity.name}": The attribute "${expAttr.name}" should be marked as UNIQUE (//UNIQUE).`);
-                }
-                if (!expAttr.isUnique && stuAttr.isUnique) {
-                     errors.push(`Incorrect Unique constraint in "${expEntity.name}": The attribute "${expAttr.name}" should NOT be marked as UNIQUE.`);
-                }
-            }
-        }
-    }
-
-    // --- Check Relationships ---
-    if (student.relationships.length !== expected.relationships.length) {
-        errors.push(`Problem: Expected ${expected.relationships.length} relationships, but found ${student.relationships.length}.`);
-    }
-
-    for (const expRel of expected.relationships) {
-        const stuRel = findByName(student.relationships, expRel.name);
-        if (!stuRel) {
-            errors.push(`Missing Relationship: The relationship "${expRel.name}" is missing.`);
-            continue;
-        }
-
-        if (expRel.isWeak && !stuRel.isWeak) {
-            errors.push(`Incorrect Relationship Type: The relationship "${expRel.name}" should be marked as weak.`);
-        }
-        if (!expRel.isWeak && stuRel.isWeak) {
-            errors.push(`Incorrect Relationship Type: The relationship "${expRel.name}" should NOT be marked as weak.`);
-        }
-
-        if (expRel.links.length !== stuRel.links.length) {
-            errors.push(`Problem in Relationship "${expRel.name}": Expected ${expRel.links.length} links, but found ${stuRel.links.length}.`);
-        } else {
-            // Verificar cada link esperado
-            for (const expLink of expRel.links) {
-                // Buscar si existe un link que coincida (en cualquier dirección)
-                const matchingLink = stuRel.links.find(stuLink => {
-                    // Dirección normal: A -> B
-                    const normalMatch = 
-                        stuLink.from === expLink.from && 
-                        stuLink.to === expLink.to &&
-                        stuLink.fromCardinality === expLink.fromCardinality &&
-                        stuLink.toCardinality === expLink.toCardinality &&
-                        stuLink.fromRole === expLink.fromRole &&
-                        stuLink.toRole === expLink.toRole;
-                    
-                    // Dirección inversa: B -> A (intercambiando también las cardinalidades Y roles)
-                    const reverseMatch = 
-                        stuLink.from === expLink.to && 
-                        stuLink.to === expLink.from &&
-                        stuLink.fromCardinality === expLink.toCardinality &&
-                        stuLink.toCardinality === expLink.fromCardinality &&
-                        stuLink.fromRole === expLink.toRole &&
-                        stuLink.toRole === expLink.fromRole;
-                    
-                    return normalMatch || reverseMatch;
-                });
-                
-                if (!matchingLink) {
-                    const fromDesc = expLink.fromRole ? `${expLink.from}[${expLink.fromCardinality} | "${expLink.fromRole}"]` : `${expLink.from}[${expLink.fromCardinality}]`;
-                    const toDesc = expLink.toRole ? `${expLink.to}[${expLink.toCardinality} | "${expLink.toRole}"]` : `${expLink.to}[${expLink.toCardinality}]`;
-                    errors.push(`Incorrect Link in "${expRel.name}": Expected link between ${fromDesc} and ${toDesc} not found or has wrong cardinalities/roles.`);
-                }
-            }
-        }
-
-        // Verificar atributos de la relación
-        if (expRel.attributes.length !== stuRel.attributes.length) {
-            errors.push(`Problem in Relationship "${expRel.name}": Expected ${expRel.attributes.length} attributes, but found ${stuRel.attributes.length}.`);
-        }
-
-        for (const expAttr of expRel.attributes) {
-            const stuAttr = findByName(stuRel.attributes, expAttr.name);
-            if (!stuAttr) {
-                errors.push(`Missing Attribute in Relationship "${expRel.name}": The attribute "${expAttr.name}" is missing.`);
-            }
-        }
-    }
-
-    return errors;
-}
+const { parseERD, compareSolutions } = require('../app.js');
 
 // Función de codificación (como encode-erd.js)
 function encodeToBase64(text) {
     return Buffer.from(encodeURIComponent(text)).toString('base64');
 }
 
-// Función de decodificación (como app.js - VERSIÓN CORREGIDA)
+// Función de decodificación (como app.js)
 function decodeFromBase64(base64Str) {
     return decodeURIComponent(atob(base64Str));
 }
@@ -353,60 +51,89 @@ function atob(str) {
     return Buffer.from(str, 'base64').toString('binary');
 }
 
+// Rutas usadas por varios casos
+const TERNARIA_OK = 'erd/Teoria/Ternarias/Ternaria correcto.erd';
+const SUPERHEROES_OK = 'erd/01 Superheroes/ER 01 Superheroes final.erd';
+const EXPANSE_OK = 'erd/04 The Expanse Completo/ER 04 The Expanse Completo final.erd';
+
 // Tests
 const tests = [
     {
-        name: 'Ternaria - Solución correcta (encoding completo)',
-        correctFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
-        userFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
-        expectedErrors: 0
+        name: 'Ternaria - la solución correcta no produce errores',
+        correctFile: TERNARIA_OK,
+        userFile: TERNARIA_OK,
+        expectNoErrors: true
     },
     {
-        name: 'Ternaria - Cardinalidades incorrectas (encoding completo)',
-        correctFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
+        name: 'Ternaria - cardinalidades incorrectas',
+        description: 'Las cardinalidades de los dos enlaces de la ternaria están cambiadas',
+        correctFile: TERNARIA_OK,
         userFile: 'erd/Teoria/Ternarias/Ternaria incorrecta cardinalidades incorrectas.erd',
-        expectedErrors: 2, // Ahora detecta las cardinalidades incorrectas
-        description: 'Verifica que el encoding/decoding preserva el contenido y detecta errores de cardinalidad'
+        mustDetect: [
+            ['cardinalidad Proveedor-Proyecto', /Relationship "suministra".*"Proveedor" and "Proyecto".*is not correct/],
+            ['cardinalidad Proyecto-Repuesto', /Relationship "suministra".*"Proyecto" and "Repuesto".*is not correct/]
+        ]
     },
     {
-        name: 'Ternaria - Falta relación (encoding completo)',
-        correctFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
+        name: 'Ternaria - modelada con dos participantes en lugar de tres',
+        description: 'La relación ternaria pierde un participante, así que le falta un enlace',
+        correctFile: TERNARIA_OK,
         userFile: 'erd/Teoria/Ternarias/Ternaria incorrecta falta relacion.erd',
-        expectedErrors: 1,
-        description: 'Detecta que falta un link en la relación ternaria'
+        mustDetect: [
+            ['número de enlaces de la ternaria', /Relationship "suministra": expected 2 connection\(s\).*but found 1/]
+        ]
     },
     {
-        name: 'Superhéroes - Solución completa (encoding completo)',
-        correctFile: 'erd/01 Superheroes/ER 01 Superheroes final.erd',
-        userFile: 'erd/01 Superheroes/ER 01 Superheroes final.erd',
-        expectedErrors: 0
+        name: 'Superhéroes - la solución correcta no produce errores',
+        correctFile: SUPERHEROES_OK,
+        userFile: SUPERHEROES_OK,
+        expectNoErrors: true
     },
     {
-        name: 'Superhéroes - 9 errores (encoding completo)',
-        correctFile: 'erd/01 Superheroes/ER 01 Superheroes final.erd',
+        name: 'Superhéroes - errores de entidades, atributos y relaciones',
+        description: 'Atributos mal nombrados, entidades débiles mal marcadas, relaciones renombradas y cardinalidades',
+        correctFile: SUPERHEROES_OK,
         userFile: 'erd/01 Superheroes/ER 01 Superheroes incorrecto.erd',
-        expectedErrors: 9, // Ahora detecta todos los errores
-        description: 'Detecta todos los tipos de errores: entidades débiles, atributos, relaciones, roles'
+        mustDetect: [
+            ['atributo que falta', /Entity "Superheroe": the attribute "nombre" is missing/],
+            ['atributo que sobra', /Entity "Superheroe": the attribute "nombre_superheroe" should not be there/],
+            ['entidad marcada débil sin serlo', /Entity "Planeta": should be a normal entity, not a weak one/],
+            ['entidad débil sin marcar', /Entity "Mision_Realizada": should be declared as "weak entity"/],
+            ['relación que sobra', /Unexpected relationship: "responsableDe"/],
+            ['relación que falta', /Missing relationship: "responsable_de"/],
+            ['cardinalidad incorrecta', /Relationship "procede".*is not correct/],
+            ['atributo de relación que falta', /Relationship "posee": the attribute "nivel" is missing/],
+            ['relación débil sin marcar', /Relationship "ha_realizado": should be declared as "weak relationship"/]
+        ]
     },
     {
-        name: 'The Expanse - Solución completa (encoding completo)',
-        correctFile: 'erd/04 The Expanse Completo/ER 04 The Expanse Completo final.erd',
-        userFile: 'erd/04 The Expanse Completo/ER 04 The Expanse Completo final.erd',
-        expectedErrors: 0
+        name: 'The Expanse - la solución correcta no produce errores',
+        correctFile: EXPANSE_OK,
+        userFile: EXPANSE_OK,
+        expectNoErrors: true
     },
     {
-        name: 'The Expanse - 43 errores (encoding completo)',
-        correctFile: 'erd/04 The Expanse Completo/ER 04 The Expanse Completo final.erd',
+        name: 'The Expanse - errores de modelado y de jerarquías',
+        description: 'El modelo más complejo: entidades que faltan y sobran, jerarquías sobre la superclase equivocada, enlaces y atributos',
+        correctFile: EXPANSE_OK,
         userFile: 'erd/04 The Expanse Completo/ER 04 The Expanse Completo incorrecto.erd',
-        expectedErrors: 43, // Detecta todos los errores con la nueva versión correcta
-        description: 'Test completo de encoding con el ERD más complejo - detecta todos los tipos de errores'
+        mustDetect: [
+            ['entidad que falta', /Missing entity: "Mineral"/],
+            ['entidad que sobra', /Unexpected entity: "Dron"/],
+            ['superclase equivocada', /Entity "Directivo": should be a subclass of "Personal"/],
+            ['jerarquía que falta', /Missing hierarchy: .*over "Personal"/],
+            ['jerarquía que sobra', /Unexpected hierarchy: .*over "Persona"/],
+            ['atributo mal nombrado', /Entity "Vuelo": the attribute "fecha_inicio" is missing/],
+            ['enlace que falta en una relación', /Relationship "coordina": there should be a connection/],
+            ['relación que falta', /Missing relationship: "pilota"/]
+        ]
     },
     {
-        name: 'Test de preservación de caracteres especiales',
-        correctFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
-        userFile: 'erd/Teoria/Ternarias/Ternaria correcto.erd',
-        expectedErrors: 0,
-        description: 'Verifica que acentos, espacios y caracteres especiales se preservan',
+        name: 'Preservación de caracteres especiales en el encoding',
+        description: 'Acentos, eñes y espacios sobreviven al viaje a base64 y vuelta',
+        correctFile: TERNARIA_OK,
+        userFile: TERNARIA_OK,
+        expectNoErrors: true,
         customValidation: (encoded, decoded, original) => {
             const errors = [];
             if (decoded !== original) {
@@ -436,65 +163,77 @@ tests.forEach((test, index) => {
     if (test.description) {
         console.log(`${colors.yellow}  ${test.description}${colors.reset}`);
     }
-    
+
     try {
         // 1. Leer archivo esperado
         const correctPath = path.join(__dirname, '..', test.correctFile);
         const correctContent = fs.readFileSync(correctPath, 'utf-8');
-        
+
         // 2. Codificar a base64 (simula encode-erd.js)
         const encoded = encodeToBase64(correctContent);
-        console.log(`  📦 Codificado a base64: ${encoded.length} caracteres`);
-        
+
         // 3. Decodificar (simula app.js)
         const decoded = decodeFromBase64(encoded);
-        console.log(`  📂 Decodificado: ${decoded.length} caracteres`);
-        
+
         // 4. Verificar que el contenido se preserva exactamente
         if (decoded !== correctContent) {
             throw new Error('El contenido decodificado no coincide con el original');
         }
-        console.log(`  ✓ Contenido preservado correctamente`);
-        
+        console.log(`  ${colors.grey}base64: ${encoded.length} caracteres, decodificado: ${decoded.length}, contenido preservado${colors.reset}`);
+
         // 5. Leer archivo del usuario
         const userPath = path.join(__dirname, '..', test.userFile);
         const userContent = fs.readFileSync(userPath, 'utf-8');
-        
-        // 6. Parsear ambos
+
+        // 6. Parsear ambos y comparar
         const expectedSolution = parseERD(decoded); // Usando el decodificado
         const userSolution = parseERD(userContent);
-        
-        // 7. Comparar
         const errors = compareSolutions(userSolution, expectedSolution);
-        
-        // 8. Validación personalizada (si existe)
-        if (test.customValidation) {
-            const customErrors = test.customValidation(encoded, decoded, correctContent);
-            errors.push(...customErrors);
-        }
-        
-        // 9. Verificar resultado
-        if (errors.length === test.expectedErrors) {
-            console.log(`  ${colors.green}✓ PASS - ${errors.length} errores detectados (esperados: ${test.expectedErrors})${colors.reset}`);
-            passed++;
-        } else {
-            console.log(`  ${colors.red}✗ FAIL - ${errors.length} errores detectados, esperados: ${test.expectedErrors}${colors.reset}`);
-            if (errors.length > 0 && errors.length <= 10) {
-                console.log(`  ${colors.red}Errores encontrados:${colors.reset}`);
-                errors.forEach(e => console.log(`    - ${e}`));
-            } else if (errors.length > 10) {
-                console.log(`  ${colors.red}Primeros 10 errores:${colors.reset}`);
-                errors.slice(0, 10).forEach(e => console.log(`    - ${e}`));
-                console.log(`    ... y ${errors.length - 10} más`);
-            }
+
+        // 7. Validación personalizada (si existe)
+        const customErrors = test.customValidation
+            ? test.customValidation(encoded, decoded, correctContent)
+            : [];
+
+        // 8. Verificar resultado
+        if (customErrors.length > 0) {
+            console.log(`  ${colors.red}✗ FAIL - la validación específica del caso encontró problemas:${colors.reset}`);
+            customErrors.forEach(e => console.log(`    - ${e}`));
             failed++;
+        } else if (test.expectNoErrors) {
+            if (errors.length === 0) {
+                console.log(`  ${colors.green}✓ PASS - sin errores, como debe ser${colors.reset}`);
+                passed++;
+            } else {
+                console.log(`  ${colors.red}✗ FAIL - se esperaban 0 errores y se han detectado ${errors.length}:${colors.reset}`);
+                errors.slice(0, 10).forEach(e => console.log(`    - ${e}`));
+                if (errors.length > 10) console.log(`    ... y ${errors.length - 10} más`);
+                failed++;
+            }
+        } else if (test.mustDetect) {
+            const missing = test.mustDetect.filter(([, re]) => !errors.some(e => re.test(e)));
+
+            if (missing.length === 0) {
+                console.log(`  ${colors.green}✓ PASS - detectadas las ${test.mustDetect.length} comprobaciones del caso${colors.reset}`);
+                console.log(`  ${colors.grey}${errors.length} errores en total${colors.reset}`);
+                passed++;
+            } else {
+                console.log(`  ${colors.red}✗ FAIL - no se han detectado ${missing.length} de ${test.mustDetect.length} comprobaciones:${colors.reset}`);
+                missing.forEach(([what, re]) => console.log(`    - ${what}  ${colors.grey}${re}${colors.reset}`));
+                console.log(`  ${colors.grey}errores que sí se detectaron (${errors.length}):${colors.reset}`);
+                errors.slice(0, 10).forEach(e => console.log(`    ${colors.grey}- ${e}${colors.reset}`));
+                if (errors.length > 10) console.log(`    ${colors.grey}... y ${errors.length - 10} más${colors.reset}`);
+                failed++;
+            }
+        } else {
+            throw new Error('El caso no declara ni expectNoErrors ni mustDetect');
         }
-        
+
     } catch (error) {
         console.log(`  ${colors.red}✗ ERROR - ${error.message}${colors.reset}`);
         failed++;
     }
-    
+
     console.log('');
 });
 

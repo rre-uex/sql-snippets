@@ -2,105 +2,108 @@ erdiagram Expanse01
 notation=crowsfoot
 
 entity Planeta { 
-codPlaneta key 
+codigo key 
 nombre
-numLunas 
-rotacionHoras
-orbitaDias
+numero_lunas 
+rotacion_horas
+orbita_dias
 } 
 
 entity Centro { 
-codCentro key 
-nomCentro 
+codigo key 
+nombre 
 coordenadas 
-fechaCreacion
+fecha_creacion
 } 
 
 entity Mineral { 
-codMineral key
-nomMineral 
-descPropiedades
+codigo key
+nombre 
+descripcion
 } 
 
-//parcial
-entity NaveEspacial extends Vehiculo{
+entity Nave_Espacial { 
 matricula key
+modelo 
 capacidad 
 }
 
-relationship ubicadoEn {
+relationship ubicado_en {
     Centro[1..N] ->Planeta[1..1]
 }
 
-relationship esPrincipalEn {
+relationship es_principal_en {
     Centro[1..1] ->Planeta[0..1]
 }
 
-relationship encontradoPor {
+relationship encontrado_por {
     Mineral[0..N] -> Centro[0..N]  
-    fechaHallazgo
+    fecha_hallazgo
+}
+relationship asignada_a {
+   Nave_Espacial[0..N] -> Planeta[1..1]  
 }
 
 weak entity Vuelo {
-    fechaIni partial-key
-    horaIni partial-key
-    fechaFin
-    horaFin
+    fecha_inicio partial-key
+    hora_inicio partial-key
+    fecha_fin
+    hora_fin
 }
 
-weak relationship realizadoPor {
-    Vuelo[0..N] -> NaveEspacial[1..1]     
+weak relationship realizado_por {
+    Vuelo[0..N] -> Nave_Espacial[1..1]     
 }
 
-relationship origenDe {
+relationship origen_de {
     Vuelo[0..N] -> Centro[1..1]     
 }
- relationship destinoDe {
+ relationship destino_de {
     Vuelo[0..N] -> Centro[1..1]     
 }
 
 
 weak entity Cargamento {
-    codCargam partial-key
-    fechaCargam
+    codigo partial-key
+    fecha
 }
 
-weak relationship almacenadoEn {
+weak relationship almacenado_en {
     Cargamento[0..N] -> Centro[1..1]     
 }
 
-relationship formaParteDe {
+relationship forma_parte_de {
     Cargamento[0..N] -> Mineral[1..1]  
     cantidad   
 }
 
-relationship transportadoEn {
+relationship transportado_en {
    Cargamento[1..N] -> Vuelo[0..1]  
 }
 
-weak entity HistoricoExtraccion {
+weak entity Historico_Extraccion {
     fecha partial-key
     cantidad
 }
 
-weak relationship incluidoEn {
-    HistoricoExtraccion[0..N] -> Mineral[1..1] 
+weak relationship incluido_en {
+    Historico_Extraccion[0..N] -> Mineral[1..1] 
 }
 
-weak relationship extraidoPor {
-    HistoricoExtraccion[0..N] -> Centro[1..1]     
+weak relationship extraido_por {
+    Historico_Extraccion[0..N] -> Centro[1..1]     
 }
 
 entity Clase_Mineral {
-    cod_clase_mineral key
-    nombre_clase_mineral
+    codigo key
+    nombre
 }
 
-relationship agrupaA {
+relationship agrupa_a {
     Mineral[1..N] ->Clase_Mineral[1..1]
 }
 
-relationship relacionadoCon {
+relationship relacionado_con {
     Mineral[0..N | "Mineral_A"] -> Mineral[0..N | "Mineral_B"]
 }
 
@@ -109,6 +112,6 @@ entity Vehiculo {
     modelo
 }
 
-relationship asignadaA {
+relationship asignado_a {
    Vehiculo[0..N] -> Planeta[1..1]  
 }

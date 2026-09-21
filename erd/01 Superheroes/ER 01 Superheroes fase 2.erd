@@ -2,13 +2,13 @@ erdiagram Model
 notation=crowsfoot
 
 entity Superheroe {
-    nombreSuperheroe key  
+    nombre key  
     fecha
 }
 
 entity Planeta {
-    cod_planeta key  
-    nombrePlaneta
+    codigo key  
+    nombre
     sistema_planetario
     coordenadas
 }
@@ -18,7 +18,7 @@ relationship procede {
 }
 
 entity Superpoder {
-    cod_superpoder key  
+    codigo key  
     descripcion
 }
 

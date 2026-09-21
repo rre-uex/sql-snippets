@@ -75,7 +75,7 @@ relationship realizado_por {
 
 entity Tipo_Envio {
    codigo_envio key
-   nombre_tipo_envio //UNIQUE
+   nombre_tipo_envio unique
    tarifa
 }
 
@@ -91,7 +91,7 @@ relationship se_envia_a{
 
 entity Empleado {
    nss key
-   nif //UNIQUE
+   nif unique
    nombre
    apellido_1
    apellido_2
@@ -100,8 +100,9 @@ entity Empleado {
    telefono
 }
 
-//total,disjunta
-entity Administrativo extends Empleado {
+hierarchy h_empleado Empleado total disjoint
+
+entity Administrativo extends h_empleado {
    nss key
 }
 
@@ -109,8 +110,7 @@ relationship asignado_a {
    Administrativo[1..1] -> Pedido[1..N]
 }
 
-//total,disjunta
-entity Preparador_De_Pedido extends Empleado {
+entity Preparador_De_Pedido extends h_empleado {
    nss key
    zona_almacen   
 }
@@ -149,15 +149,11 @@ weak relationship otorgada_a {
 weak relationship realizada_por {
    Valoracion[0..N] -> Cliente[1..1]
 }
-// parcial
-entity PedidoEnviado extends Pedido {
+hierarchy h_pedido Pedido partial
+
+entity PedidoEnviado extends h_pedido {
    numero_pedido key
    fecha_envio
    hora_envio
 }
-
-
-
-
-
 

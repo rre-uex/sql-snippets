@@ -2,13 +2,13 @@ erdiagram Model
 notation=crowsfoot
 
 entity Superheroe {
-    nombreSuperheroe key  
+    nombre key  
     fecha
 }
 
 entity Planeta {
-    cod_planeta key  
-    nombrePlaneta
+    codigo key  
+    nombre
     sistema_planetario
     coordenadas
 }
@@ -18,7 +18,7 @@ relationship procede {
 }
 
 entity Superpoder {
-    cod_superpoder key  
+    codigo key  
     descripcion
 }
 
@@ -32,7 +32,7 @@ relationship coordina {
     fecha_inicio
 }
 
-relationship responsableDe {
+relationship responsable_de {
     Superheroe[0..1 | "Superior" ] -> Superheroe[0..N | "Subordinado"] 
 }
 

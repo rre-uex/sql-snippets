@@ -2,16 +2,16 @@ erdiagram Model
 notation=crowsfoot
 
 entity Planeta {
-    cod_planeta key
+    codigo key
     nombre
-    num_lunas
+    numero_lunas
     rotacion_horas
     orbita_dias
 }
 
 entity Centro {
-    cod_centro key
-    nom_centro
+    codigo key
+    nombre
     coordenadas
     fecha_creacion
     planeta //este atributo sobra, puede ser por error G2 si no se hubiera incluido la relacion ubicadoEn o error L6 si sí se incluyó 
@@ -81,8 +81,9 @@ entity Vehiculo {
     modelo
 }
 
-//parcial
-entity NaveEspacial extends Vehiculo{
+hierarchy h_vehiculo Vehiculo partial disjoint
+
+entity NaveEspacial extends h_vehiculo{
     matricula //L1 No indicar correctamente la clave primaria.
     capacidad key
 }
@@ -102,7 +103,7 @@ weak relationship realizadoPor {
     Vuelo[0..N] -> NaveEspacial[0..1] //M5 Indicar una cardinalidad distinta a `(1,1)` en el lado de la **entidad fuerte** en la relación de identificación.     
 }
 
-weak entity Dron extends Vehiculo{
+weak entity Dron extends h_vehiculo{
     cod_dron partial-key
     funcion
 }//G5: Crear un subtipo que a la vez es una entidad débil de _otra_ entidad distinta (conflicto de identidad).
@@ -131,19 +132,19 @@ entity Persona{
     pasaporte //L2: No indicar las claves alternativas (candidatas). 
 }
 
-//total,solapada
-entity Directivo extends Persona{ //L21 Indicar incorrectamente las restricciones de la jerarquía (total/parcial, disjunta/solapada).
-    numDirectivo key  //M8 Indicar claves primarias distintas en entidades de la misma jerarquía.
+hierarchy h_persona Persona total overlapping
+
+entity Directivo extends h_persona{ //L21 Indicar incorrectamente las restricciones de la jerarquía (total/parcial, disjunta/solapada).
+    num_directivo key  //M8 Indicar claves primarias distintas en entidades de la misma jerarquía.
     puesto //M9 Repetir atributos comunes (no clave) del supertipo en los subtipos.
 }
 
-//parcial,disjunta
-entity Astronauta extends Persona{//L21 Indicar incorrectamente las restricciones de la jerarquía (total/parcial, disjunta/solapada).
+entity Astronauta extends h_persona{//L21 Indicar incorrectamente las restricciones de la jerarquía (total/parcial, disjunta/solapada).
     numPersonal key
 }
 //parcial, 
-entity Robot extends Persona{
-    numRobot key
+entity Robot extends h_persona{
+    num_robot key
 } // es error G3: Definir una jerarquía donde el subtipo **no "ES UN"** tipo del supertipo (relación semántica incorrecta).
 
 entity Administrativo{

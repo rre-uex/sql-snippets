@@ -38,8 +38,9 @@ entity Trabajador {
     fecha_contratacion
     categoria
 }
-//total,disjunta
-entity Oompa_Loompa extends Trabajador{
+hierarchy h_trabajador Trabajador total disjoint
+
+entity Oompa_Loompa extends h_trabajador{
     numero_seguro_magico key
     cancion_favorita
 }
@@ -65,13 +66,11 @@ weak relationship ha_tenido{
     Oompa_Loompa[1..1] -> HistorialGerencias[0..N]
 }
 
-//total,disjunta
-entity Administrador extends Trabajador{
+entity Administrador extends h_trabajador{
     numero_seguro_magico key
 }
 
-//total,disjunta
-entity Disenador extends Trabajador{
+entity Disenador extends h_trabajador{
     numero_seguro_magico key
 }
 
@@ -146,8 +145,9 @@ relationship tiene_asignado {
     Fabrica[1..1] -> Pedido[1..N]
 }
 
-//parcial
-entity Pedido_Entregado extends Pedido{
+hierarchy h_pedido Pedido partial
+
+entity Pedido_Entregado extends h_pedido{
     numero_pedido key
     fecha_entrega
 }

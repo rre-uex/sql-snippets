@@ -14,50 +14,7 @@ const path = require('path');
 // ============================================================================
 // Import REAL parser from app.js
 // ============================================================================
-const appCode = fs.readFileSync(path.join(__dirname, '../app.js'), 'utf8');
-
-// Extract parseERD function (complete implementation)
-const parseERDStart = appCode.indexOf('function parseERD(text) {');
-const parseERDEnd = appCode.indexOf('\n}', parseERDStart) + 2;
-const parseERDCode = appCode.substring(parseERDStart, parseERDEnd);
-eval(parseERDCode);
-
-// Extract compareSolutions function (complete implementation with new error messages)
-const compareSolutionsStart = appCode.indexOf('function compareSolutions(student, expected) {');
-const compareSolutionsEnd = appCode.indexOf('\n}', compareSolutionsStart + 500) + 2;
-let compareSolutionsCode = appCode.substring(compareSolutionsStart, compareSolutionsEnd);
-
-// Need to find the actual end (multiple closing braces)
-let braceCount = 0;
-let inFunction = false;
-let actualEnd = compareSolutionsStart;
-for (let i = compareSolutionsStart; i < appCode.length; i++) {
-    if (appCode[i] === '{') {
-        braceCount++;
-        inFunction = true;
-    } else if (appCode[i] === '}') {
-        braceCount--;
-        if (inFunction && braceCount === 0) {
-            actualEnd = i + 1;
-            break;
-        }
-    }
-}
-compareSolutionsCode = appCode.substring(compareSolutionsStart, actualEnd);
-eval(compareSolutionsCode);
-
-// Extract helper functions
-const createErrorMessageStart = appCode.indexOf('function createErrorMessage(');
-if (createErrorMessageStart !== -1) {
-    const createErrorMessageEnd = appCode.indexOf('\n}', createErrorMessageStart) + 2;
-    eval(appCode.substring(createErrorMessageStart, createErrorMessageEnd));
-}
-
-const formatCodeStart = appCode.indexOf('function formatCode(');
-if (formatCodeStart !== -1) {
-    const formatCodeEnd = appCode.indexOf('\n}', formatCodeStart) + 2;
-    eval(appCode.substring(formatCodeStart, formatCodeEnd));
-}
+const { parseERD, compareSolutions } = require('../app.js');
 
 // ============================================================================
 // Test Runner

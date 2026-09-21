@@ -74,24 +74,24 @@ relationship afecta_a {
 
 entity Persona{
     codigo_usuario key
-    dni //UNIQUE
+    dni unique
     nombre
     apellido1
     apellido2
     telefono
 }
 
-//total,solapada
-entity Usuario extends Persona{
+hierarchy h_persona Persona total overlapping
+
+entity Usuario extends h_persona{
     codigo_usuario key
     email
     tarjeta_credito
 }
 
-//total,solapada
-entity Empleado extends Persona{
+entity Empleado extends h_persona{
     codigo_usuario key
-    num_seg_social //UNIQUE
+    num_seg_social unique
     categoria
 }
 
@@ -126,8 +126,9 @@ relationship realizada_por {
     Revision[0..N] -> Empleado[1..N]
 }
 
-//parcial
-entity Patinete_De_Baja extends Patinete{ 
+hierarchy h_patinete Patinete partial
+
+entity Patinete_De_Baja extends h_patinete{ 
     matricula key
     fecha_baja
 }

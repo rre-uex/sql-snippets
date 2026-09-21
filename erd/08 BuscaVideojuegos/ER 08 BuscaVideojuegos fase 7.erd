@@ -62,16 +62,16 @@ relationship subtitulos_en {
 //
 
 
-//parcial,solapada
-entity Multijugador extends Videojuego{
+hierarchy h_videojuego Videojuego partial overlapping
+
+entity Multijugador extends h_videojuego{
     id_videojuego key
     numero_maximo_jugadores
     ancho_banda_minimo
     ping_minimo
 }
 
-//parcial,solapada
-entity Realidad_Virtual extends Videojuego{
+entity Realidad_Virtual extends h_videojuego{
     id_videojuego key
 }
 
@@ -137,5 +137,4 @@ relationship se_vende_actualmente_en {
     fecha_desde
     precio
 }
-
 

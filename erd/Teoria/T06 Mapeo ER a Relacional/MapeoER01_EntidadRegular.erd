@@ -3,6 +3,6 @@ notation=crowsfoot
 
 entity E {
     atributo_clave key
-    atributo_clave_alternativa // UNIQUE
+    atributo_clave_alternativa unique
     resto_atributos
 }

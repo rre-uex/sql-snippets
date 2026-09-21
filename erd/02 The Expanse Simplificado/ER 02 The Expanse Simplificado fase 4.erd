@@ -2,55 +2,55 @@ erdiagram Expanse01
 notation=crowsfoot
 
 entity Planeta { 
-codPlaneta key 
+codigo key 
 nombre
-numLunas 
-rotacionHoras
-orbitaDias
+numero_lunas 
+rotacion_horas
+orbita_dias
 } 
 
 entity Centro { 
-codCentro key 
-nomCentro 
+codigo key 
+nombre 
 coordenadas 
-fechaCreacion
+fecha_creacion
 } 
 
 entity Mineral { 
-codMineral key
-nomMineral 
-descPropiedades
+codigo key
+nombre 
+descripcion
 } 
 
-entity NaveEspacial { 
+entity Nave_Espacial { 
 matricula key
 modelo 
 capacidad 
 }
 
-relationship ubicadoEn {
+relationship ubicado_en {
     Centro[1..N] ->Planeta[1..1]
 }
 
-relationship esPrincipalEn {
+relationship es_principal_en {
     Centro[1..1] ->Planeta[0..1]
 }
 
-relationship encontradoPor {
+relationship encontrado_por {
     Mineral[0..N] -> Centro[0..N]  
-    fechaHallazgo
+    fecha_hallazgo
 }
-relationship asignadaA {
-   NaveEspacial[0..N] -> Planeta[1..1]  
+relationship asignada_a {
+   Nave_Espacial[0..N] -> Planeta[1..1]  
 }
 
 weak entity Vuelo {
-    fechaIni partial-key
-    horaIni partial-key
-    fechaFin
-    horaFin
+    fecha_inicio partial-key
+    hora_inicio partial-key
+    fecha_fin
+    hora_fin
 }
 
-weak relationship realizadoPor {
-    Vuelo[0..N] -> NaveEspacial[1..1]     
+weak relationship realizado_por {
+    Vuelo[0..N] -> Nave_Espacial[1..1]     
 }

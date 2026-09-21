@@ -2,40 +2,38 @@
 erdiagram Model
 notation=crowsfoot
 
-entity ENTIDAD1 {
-    id_1_ key
-    atributs_de_1
+entity Entidad_1 {
+    id_entidad_1 key
+    atributos_de_1
 }
 
-entity ENTIDAD2 {
-    id_2 key
+entity Entidad_2 {
+    id_entidad_2 key
     atributos_de_2
 }
 
 // Una tercera entidad que necesita relacionarse con la *interacción* entre A y B.
-entity ENTIDAD_EXTERNA {
+entity Entidad_Externa {
     id_entidad_a_relacionar key
-    atributso_de_entidad_a_relacionar
+    atributos_de_entidad_a_relacionar
 }
 
 // La relación M:N se "cosifica" en una entidad asociativa.
 // Esta entidad representa una instancia única de la relación.
 // Su clave primaria es la combinación de las claves foráneas de A y B.
-entity ASOC_ENTIDAD_12 {
-   id_1_ key
-   id_2 key
+associative entity Asoc_Entidad_12 {
 }
 
 // Las relaciones originales M:N ahora son dos relaciones 1:N hacia la entidad asociativa.
-relationship entidad1_participa_en {
-    ENTIDAD1[1..1] -> ASOC_ENTIDAD_12[0..N]
+associative relationship entidad1_participa_en {
+    Entidad_1[1..1] -> Asoc_Entidad_12[0..N]
 }
 
-relationship entidad2_participa_en {
-    ENTIDAD2[1..1] -> ASOC_ENTIDAD_12[0..N]
+associative relationship entidad2_participa_en {
+    Entidad_2[1..1] -> Asoc_Entidad_12[0..N]
 }
 
 // Ahora, la entidad asociativa, al ser una entidad, puede participar en otras relaciones.
 relationship relacion_entidad_externa_entidad_asociativa {
-    ASOC_ENTIDAD_12[0..N] -> ENTIDAD_EXTERNA[1..1]
+    Asoc_Entidad_12[0..N] -> Entidad_Externa[1..1]
 }

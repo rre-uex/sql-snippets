@@ -1,12 +1,13 @@
 // --- 1. THE EXPECTED SOLUTION ---
-// This comes from the URL query string parameter 'solution' (base64 encoded)
+// This comes from the URL query string parameter 's' (base64 encoded)
 let expectedSolutionText = '';
 
 // --- Configuration ---
 const CONFIG = {
     MAX_SOLUTION_SIZE: 100000, // 100KB max (encoded)
     MAX_DECODED_SIZE: 200000,  // 200KB max (decoded)
-    isDevelopment: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
+    isDevelopment: typeof window !== 'undefined' &&
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'),
     COOKIE_NAME: 'erd_student_solution',
     COOKIE_EXPIRY_DAYS: 30
 };
@@ -44,9 +45,7 @@ function getUrlParameter(name) {
 // --- Function to decode base64 ---
 function decodeBase64(str) {
     try {
-        // Primero decodificamos de base64 a string
         const base64Decoded = atob(str);
-        // Luego decodificamos el URI encoding
         return decodeURIComponent(base64Decoded);
     } catch (e) {
         if (CONFIG.isDevelopment) {
@@ -58,31 +57,24 @@ function decodeBase64(str) {
 
 // --- Validate ERD content ---
 function validateERDContent(content) {
-    // Check if it looks like an ERD diagram
-    const hasERDiagram = content.toLowerCase().includes('erdiagram');
-    const hasEntity = content.toLowerCase().includes('entity');
-    const hasRelationship = content.toLowerCase().includes('relationship');
-    
-    return hasERDiagram || hasEntity || hasRelationship;
+    const lower = content.toLowerCase();
+    return lower.includes('erdiagram') || lower.includes('entity') || lower.includes('relationship');
 }
 
 // --- Load expected solution from URL ---
 function loadExpectedSolution() {
     const encodedSolution = getUrlParameter('s');
-    
-    // Validation 1: Check if parameter exists
+
     if (!encodedSolution) {
         return {
             success: false,
             errorType: 'missing',
             message: 'No expected parameter found in URL.',
             details: 'This page requires a URL parameter.',
-      //      details: 'This page requires a base64-encoded ERD solution in the URL parameter "solution".',
             suggestion: 'Provide a valid URL.'
         };
     }
-    
-    // Validation 2: Check parameter size (prevent DoS)
+
     if (encodedSolution.length > CONFIG.MAX_SOLUTION_SIZE) {
         return {
             success: false,
@@ -92,8 +84,7 @@ function loadExpectedSolution() {
             suggestion: 'The encoded parameter exceeds the maximum allowed size.'
         };
     }
-    
-    // Validation 3: Check if it's valid base64
+
     const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
     if (!base64Regex.test(encodedSolution)) {
         return {
@@ -104,10 +95,9 @@ function loadExpectedSolution() {
             suggestion: 'Make sure the URL was correct.'
         };
     }
-    
-    // Validation 4: Try to decode
+
     const decodedSolution = decodeBase64(encodedSolution);
-    
+
     if (!decodedSolution) {
         return {
             success: false,
@@ -117,8 +107,7 @@ function loadExpectedSolution() {
             suggestion: 'Please verify the URL was correct.'
         };
     }
-    
-    // Validation 5: Check decoded size
+
     if (decodedSolution.length > CONFIG.MAX_DECODED_SIZE) {
         return {
             success: false,
@@ -128,8 +117,7 @@ function loadExpectedSolution() {
             suggestion: 'The solution content is too large to process.'
         };
     }
-    
-    // Validation 6: Check if it looks like an ERD
+
     if (!validateERDContent(decodedSolution)) {
         return {
             success: false,
@@ -137,18 +125,17 @@ function loadExpectedSolution() {
             message: 'Warning: Content does not appear to be valid.',
             details: 'The decoded content does not contain expected keywords.',
             suggestion: 'The content may be encoded incorrectly.',
-            isWarning: true // This is a warning, not a hard error
+            isWarning: true
         };
     }
-    
-    // All validations passed!
+
     expectedSolutionText = decodedSolution;
-    
+
     if (CONFIG.isDevelopment) {
         console.log('Expected solution decoded successfully:', expectedSolutionText.substring(0, 100) + '...');
         console.log('Solution length:', decodedSolution.length, 'characters');
     }
-    
+
     return {
         success: true,
         message: 'Expected solution loaded successfully!',
@@ -156,366 +143,574 @@ function loadExpectedSolution() {
     };
 }
 
+
 // --- 2. THE PARSER ---
-// This function converts the ERD text into a structured object.
-// Note: This is a simplified parser for this specific task.
+// Adaptado a la sintaxis actual de bigER:
+//   - jerarquias como elemento propio del modelo:
+//         hierarchy <nombre> <EntidadBase> <total|partial> [disjoint|overlapping]
+//   - extends apunta a una jerarquia, no a una entidad
+//   - entidades y relaciones asociativas: associative entity / associative relationship
+//   - unique es palabra clave del lenguaje (antes era el comentario //UNIQUE)
+//
+// derived, multivalued y optional se reconocen para que el parser no se
+// atasque si aparecen, pero no se evaluan: no forman parte de lo que se
+// ensena en la asignatura.
+
+const ATTRIBUTE_TYPES = ['partial-key', 'multivalued', 'optional', 'derived', 'unique', 'key', 'none'];
+const VISIBILITY = ['public', 'private', 'protected', 'package'];
+
+// Comentario de especializacion de la sintaxis antigua (//parcial,disjunta)
+const LEGACY_SPECIALIZATION = /^\s*\/\/\s*(parcial|total)\s*(?:,\s*(solapada|disjunta))?\s*$/im;
+
+/**
+ * Elimina comentarios de bloque y de linea, salvo //UNIQUE, que se conserva
+ * por compatibilidad con soluciones escritas con la sintaxis anterior.
+ * Limpiar antes de buscar entidades evita que una palabra como "entity"
+ * dentro de un comentario produzca un elemento fantasma.
+ */
+function stripComments(text) {
+    return text
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/\/\/(?!\s*UNIQUE\b).*$/gim, '');
+}
+
+/**
+ * Parsea una linea de atributo. Admite visibilidad, tipo de dato con
+ * tamano (VARCHAR(20)) y el tipo de atributo al final.
+ * Devuelve null si la linea no es un atributo.
+ */
+function parseAttributeLine(rawLine) {
+    const legacyUnique = /\/\/\s*UNIQUE\b/i.test(rawLine);
+    const line = rawLine.replace(/\/\/.*$/, '').trim();
+
+    if (!line || /[{}]/.test(line) || line.includes('->')) {
+        return null;
+    }
+
+    const visibility = VISIBILITY.concat(['\\+', '-', '#', '~']).join('|');
+    const types = ATTRIBUTE_TYPES.join('|');
+
+    const attrRegex = new RegExp(
+        '^(?:(' + visibility + ')\\s*)?' +
+        '(\\w+)' +
+        '(?:\\s*:\\s*(\\w+(?:\\s*\\([^)]*\\))?))?' +
+        '(?:\\s+(' + types + '))?' +
+        '\\s*$',
+        'i'
+    );
+
+    const m = line.match(attrRegex);
+    if (!m) return null;
+
+    const type = m[4] ? m[4].toLowerCase() : null;
+
+    return {
+        name: m[2],
+        datatype: m[3] ? m[3].replace(/\s+/g, '') : null,
+        isKey: type === 'key',
+        isPartialKey: type === 'partial-key',
+        isUnique: type === 'unique' || legacyUnique
+    };
+}
+
+/**
+ * Convierte el texto ERD en un objeto estructurado.
+ */
 function parseERD(text) {
     const erd = {
         entities: [],
-        relationships: []
+        relationships: [],
+        hierarchies: [],
+        usesLegacySpecialization: LEGACY_SPECIALIZATION.test(text)
     };
 
-    // Clean up text: remove block comments but keep line comments (we need //UNIQUE)
-    const cleanText = text.replace(/\/\*[\s\S]*?\*\//g, '').trim();
-
-    // Regex to find entities (including weak ones) with possible preceding comment
-    // Captura el comentario de la línea anterior si existe
-    const entityRegex = /(?:\/\/([^\n]*)\n\s*)?(weak\s+)?entity\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{([\s\S]*?)\}/g;
+    const cleanText = stripComments(text);
     let match;
 
-    // --- Parse Entities ---
+    // --- Hierarchies ---
+    const hierarchyRegex = /\bhierarchy\s+(\w+)\s+(\w+)\s+(total|partial)(?:\s+(disjoint|overlapping))?/gi;
+
+    while ((match = hierarchyRegex.exec(cleanText)) !== null) {
+        erd.hierarchies.push({
+            name: match[1],
+            base: match[2],
+            completeness: match[3].toLowerCase(),
+            constraint: match[4] ? match[4].toLowerCase() : null
+        });
+    }
+
+    // --- Entities ---
+    const entityRegex = /(?:\b(weak|associative)\s+)?\bentity\s+(\w+)(?:\s+extends\s+(\w+))?\s*\{([\s\S]*?)\}/g;
+
     while ((match = entityRegex.exec(cleanText)) !== null) {
-        const precedingComment = match[1] ? match[1].trim() : null;
-        const isWeak = !!match[2];
-        const name = match[3];
-        const extendsFrom = match[4] || null;
-        const body = match[5];
+        const modifier = match[1] ? match[1].toLowerCase() : null;
 
         const entity = {
-            name: name,
-            isWeak: isWeak,
-            extendsFrom: extendsFrom,
-            specialization: null,
+            name: match[2],
+            isWeak: modifier === 'weak',
+            isAssociative: modifier === 'associative',
+            extendsHierarchy: match[3] || null,
             attributes: []
         };
 
-        // Parse specialization comment (parcial/total, solapada/disjunta)
-        // Solo si la entidad tiene extends
-        if (precedingComment) {
-            const specializationMatch = precedingComment.match(/^\s*(parcial|total)(?:\s*,\s*(solapada|disjunta))?\s*$/i);
-            if (specializationMatch) {
-                // Siempre parseamos el comentario si coincide con el patrón
-                entity.specialization = {
-                    completeness: specializationMatch[1].toLowerCase(),
-                    overlap: specializationMatch[2] ? specializationMatch[2].toLowerCase() : null
-                };
-            }
+        for (const line of match[4].split('\n')) {
+            const attr = parseAttributeLine(line);
+            if (attr) entity.attributes.push(attr);
         }
 
-        // Parse attributes within the entity body
-        const lines = body.trim().split('\n');
-        for (const line of lines) {
-            const attrLine = line.trim();
-            if (attrLine) {
-                // Verificar si tiene comentario //UNIQUE
-                const hasUniqueComment = /\/\/\s*UNIQUE/.test(attrLine);
-                
-                const attrMatch = attrLine.match(/^(\w+)\s*(:\s*\w+)?\s*(key|partial-key|derived)?/);
-                if (attrMatch) {
-                    entity.attributes.push({
-                        name: attrMatch[1],
-                        isKey: attrMatch[3] === 'key',
-                        isPartialKey: attrMatch[3] === 'partial-key',
-                        isUnique: hasUniqueComment
-                    });
-                }
-            }
-        }
         erd.entities.push(entity);
     }
-    
-    // --- Parse Relationships ---
-    const relRegex = /(weak\s+)?relationship\s+(\w+)\s*\{([\s\S]*?)\}/g;
+
+    // --- Relationships ---
+    const relRegex = /(?:\b(weak|associative)\s+)?\brelationship\s+(\w+)\s*\{([\s\S]*?)\}/g;
 
     while ((match = relRegex.exec(cleanText)) !== null) {
-        const isWeak = !!match[1];
-        const name = match[2];
-        const body = match[3];
+        const modifier = match[1] ? match[1].toLowerCase() : null;
 
         const relationship = {
-            name: name,
-            isWeak: isWeak,
+            name: match[2],
+            isWeak: modifier === 'weak',
+            isAssociative: modifier === 'associative',
             links: [],
-            attributes: [] // AÑADIR: array para atributos de la relación
+            attributes: []
         };
 
-        // Parse links and attributes within the relationship body
-        const lines = body.trim().split('\n');
-        for (const line of lines) {
-            // Limpiar comentarios que no sean parte de la sintaxis
-            const linkLine = line.replace(/\/\/(?!UNIQUE).*/g, '').trim();
-            // Regex para links - ahora busca TODAS las flechas en la línea
-            const arrowCount = (linkLine.match(/->/g) || []).length;
-            
-            if (arrowCount > 0) {
-                // Si hay flechas, parsear cada segmento
+        for (const rawLine of match[3].split('\n')) {
+            const linkLine = rawLine.replace(/\/\/.*$/, '').trim();
+
+            if (!linkLine || /^[{}]$/.test(linkLine)) continue;
+
+            if (linkLine.includes('->')) {
                 const segments = linkLine.split('->').map(s => s.trim());
-                
+
                 for (let i = 0; i < segments.length - 1; i++) {
-                    const fromPart = segments[i];
-                    const toPart = segments[i + 1];
-                    
-                    // Extraer entidad y cardinalidad del segmento "from"
-                    const fromMatch = fromPart.match(/(\w+)\s*(\[[^\]]*\])?$/);
-                    // Extraer entidad y cardinalidad del segmento "to"
-                    const toMatch = toPart.match(/^(\w+)\s*(\[[^\]]*\])?/);
-                    
-                    // Validar que ambos lados de la flecha sean entidades válidas
+                    const fromMatch = segments[i].match(/(\w+)\s*(\[[^\]]*\])?$/);
+                    const toMatch = segments[i + 1].match(/^(\w+)\s*(\[[^\]]*\])?/);
+
                     if (!fromMatch || !toMatch) {
-                        throw new Error(`Invalid link syntax in relationship "${name}": "${linkLine}". Each arrow (->) must connect two entities.`);
+                        throw new Error(`The relationship "${relationship.name}" has a malformed line: "${linkLine}". Each arrow (->) must connect two entities, for example: Estudiante[1..1] -> Matricula[1..N]`);
                     }
-                    
-                    if (fromMatch && toMatch) {
-                        // Extraer cardinalidad y rol del formato [cardinalidad | "rol"]
-                        const parseCardinalityAndRole = (bracketContent) => {
-                            if (!bracketContent) return { cardinality: '1', role: null };
-                            const cleaned = bracketContent.replace(/[\[\]]/g, '');
-                            const parts = cleaned.split('|').map(p => p.trim());
-                            return {
-                                cardinality: parts[0],
-                                role: parts[1] ? parts[1].replace(/['"]/g, '') : null
-                            };
+
+                    const parseCardinalityAndRole = (bracketContent) => {
+                        if (!bracketContent) return { cardinality: '1', role: null };
+                        const cleaned = bracketContent.replace(/[[\]]/g, '');
+                        const parts = cleaned.split('|').map(p => p.trim());
+                        return {
+                            cardinality: parts[0],
+                            role: parts[1] ? parts[1].replace(/['"]/g, '') : null
                         };
-                        
-                        const fromData = parseCardinalityAndRole(fromMatch[2]);
-                        const toData = parseCardinalityAndRole(toMatch[2]);
-                        
-                        relationship.links.push({
-                            from: fromMatch[1],
-                            fromCardinality: fromData.cardinality,
-                            fromRole: fromData.role,
-                            to: toMatch[1],
-                            toCardinality: toData.cardinality,
-                            toRole: toData.role
-                        });
-                    }
-                }
-            } else if (linkLine && !linkLine.match(/[{}]/)) {
-                // Si no es un link ni llaves, es un atributo de la relación
-                const attrMatch = linkLine.match(/^(\w+)/);
-                if (attrMatch) {
-                    relationship.attributes.push({
-                        name: attrMatch[1]
+                    };
+
+                    const fromData = parseCardinalityAndRole(fromMatch[2]);
+                    const toData = parseCardinalityAndRole(toMatch[2]);
+
+                    relationship.links.push({
+                        from: fromMatch[1],
+                        fromCardinality: fromData.cardinality,
+                        fromRole: fromData.role,
+                        to: toMatch[1],
+                        toCardinality: toData.cardinality,
+                        toRole: toData.role
                     });
                 }
+            } else {
+                const attr = parseAttributeLine(rawLine);
+                if (attr) relationship.attributes.push(attr);
             }
         }
+
         erd.relationships.push(relationship);
     }
-    
+
     return erd;
 }
 
 
-// --- 3. THE COMPARISON LOGIC ---
-// This main function orchestrates all the checks.
+// --- 3. HELPERS SOBRE EL MODELO ---
+
+/** Subclases declaradas en una jerarquia, ordenadas alfabeticamente. */
+function subclassesOf(erd, hierarchyName) {
+    return erd.entities
+        .filter(e => e.extendsHierarchy === hierarchyName)
+        .map(e => e.name)
+        .sort();
+}
+
+/** Entidad base de la jerarquia a la que pertenece una entidad, o null. */
+function superclassOf(erd, entity) {
+    if (!entity.extendsHierarchy) return null;
+    const h = erd.hierarchies.find(x => x.name === entity.extendsHierarchy);
+    return h ? h.base : null;
+}
+
+/** Propiedades de una jerarquia en texto: "total disjoint", "partial"... */
+function hierarchyProps(hierarchy) {
+    return hierarchy.constraint
+        ? `${hierarchy.completeness} ${hierarchy.constraint}`
+        : hierarchy.completeness;
+}
+
+function listOrNone(arr) {
+    return arr.length ? arr.join(', ') : 'none';
+}
+
+/** Identifica una jerarquia por su contenido, no por su nombre interno. */
+function describeHierarchy(erd, hierarchy) {
+    const subs = subclassesOf(erd, hierarchy.name);
+    return `hierarchy over "${hierarchy.base}" with subclasses [${listOrNone(subs)}]`;
+}
+
+/** Entidades distintas que participan en una relacion. */
+function endpointsOf(relationship) {
+    return relationship.links
+        .flatMap(l => [l.from, l.to])
+        .filter((v, i, a) => a.indexOf(v) === i)
+        .sort();
+}
+
+/** Descripcion de un extremo de enlace, con cardinalidad y rol. */
+function describeEndpoint(entity, cardinality, role) {
+    return role
+        ? `${entity}[${cardinality} | "${role}"]`
+        : `${entity}[${cardinality}]`;
+}
+
+function sameSet(a, b) {
+    return a.length === b.length && a.every((v, i) => v === b[i]);
+}
+
+
+// --- 4. THE COMPARISON LOGIC ---
 function compareSolutions(student, expected) {
     const errors = [];
-    
     const findByName = (arr, name) => arr.find(item => item.name === name);
 
-    // --- Check Entities ---
-    if (student.entities.length !== expected.entities.length) {
-        errors.push(`Problem: Expected ${expected.entities.length} entities, but found ${student.entities.length}.`);
+    // Aviso de migracion: sintaxis antigua de especializacion por comentario
+    if (student.usesLegacySpecialization) {
+        errors.push('Outdated syntax: specialization is no longer written as a comment such as //parcial,disjunta. Declare a hierarchy instead, for example: hierarchy h_persona Persona total disjoint');
+    }
+
+    // ============================================================
+    // ENTIDADES
+    // ============================================================
+
+    const expEntityNames = expected.entities.map(e => e.name);
+    const stuEntityNames = student.entities.map(e => e.name);
+
+    for (const name of expEntityNames.filter(n => !stuEntityNames.includes(n))) {
+        errors.push(`Missing entity: "${name}" is not declared.`);
+    }
+    for (const name of stuEntityNames.filter(n => !expEntityNames.includes(n))) {
+        errors.push(`Unexpected entity: "${name}" should not be part of this model.`);
     }
 
     for (const expEntity of expected.entities) {
         const stuEntity = findByName(student.entities, expEntity.name);
-        if (!stuEntity) {
-            errors.push(`Missing Entity: The entity "${expEntity.name}" is missing.`);
-            continue;
+        if (!stuEntity) continue;
+
+        if (expEntity.isWeak !== stuEntity.isWeak) {
+            errors.push(expEntity.isWeak
+                ? `Entity "${expEntity.name}": should be declared as "weak entity", because it does not have an identifier of its own.`
+                : `Entity "${expEntity.name}": should be a normal entity, not a weak one.`);
         }
 
-        if (expEntity.isWeak && !stuEntity.isWeak) {
-            errors.push(`Incorrect Entity Type: The entity "${expEntity.name}" should be marked as weak.`);
-        }
-        if (!expEntity.isWeak && stuEntity.isWeak) {
-            errors.push(`Incorrect Entity Type: The entity "${expEntity.name}" should NOT be marked as weak.`);
+        if (expEntity.isAssociative !== stuEntity.isAssociative) {
+            errors.push(expEntity.isAssociative
+                ? `Entity "${expEntity.name}": should be declared as "associative entity", because it represents a relationship promoted to an entity.`
+                : `Entity "${expEntity.name}": should be a normal entity, not an associative one.`);
         }
 
-        // Check extends (inheritance)
-        if (expEntity.extendsFrom !== stuEntity.extendsFrom) {
-            if (expEntity.extendsFrom && !stuEntity.extendsFrom) {
-                errors.push(`Incorrect Entity: The entity "${expEntity.name}" should extend "${expEntity.extendsFrom}".`);
-            } else if (!expEntity.extendsFrom && stuEntity.extendsFrom) {
-                errors.push(`Incorrect Entity: The entity "${expEntity.name}" should NOT extend any entity.`);
+        // Herencia: se compara la superclase resuelta a traves de la jerarquia,
+        // no el nombre de la jerarquia, que el alumno elige libremente
+        const expSuper = superclassOf(expected, expEntity);
+        const stuSuper = superclassOf(student, stuEntity);
+
+        if (stuEntity.extendsHierarchy && stuSuper === null) {
+            errors.push(`Entity "${stuEntity.name}": extends "${stuEntity.extendsHierarchy}", but no hierarchy with that name is declared. Remember that "extends" must reference a hierarchy, not an entity.`);
+        } else if (expSuper !== stuSuper) {
+            if (expSuper && !stuSuper) {
+                errors.push(`Entity "${expEntity.name}": should be a subclass of "${expSuper}", declared through a hierarchy.`);
+            } else if (!expSuper && stuSuper) {
+                errors.push(`Entity "${expEntity.name}": should not be a subclass of anything, but it is a subclass of "${stuSuper}".`);
             } else {
-                errors.push(`Incorrect Entity: The entity "${expEntity.name}" should extend "${expEntity.extendsFrom}" but extends "${stuEntity.extendsFrom}".`);
+                errors.push(`Entity "${expEntity.name}": should be a subclass of "${expSuper}", but it is a subclass of "${stuSuper}".`);
             }
         }
 
-        // Check specialization (parcial/total, solapada/disjunta) for entities with extends
-        if (expEntity.extendsFrom) {
-            const expSpec = expEntity.specialization;
-            const stuSpec = stuEntity.specialization;
+        // Atributos
+        const expAttrNames = expEntity.attributes.map(a => a.name);
+        const stuAttrNames = stuEntity.attributes.map(a => a.name);
 
-            if (expSpec) {
-                if (!stuSpec) {
-                    const expectedComment = expSpec.overlap 
-                        ? `//${expSpec.completeness},${expSpec.overlap}` 
-                        : `//${expSpec.completeness}`;
-                    errors.push(`Missing Specialization Comment: The entity "${expEntity.name}" should have the comment "${expectedComment}" before its declaration.`);
-                } else {
-                    // Verificar completeness (parcial/total) primero
-                    if (expSpec.completeness !== stuSpec.completeness) {
-                        errors.push(`Incorrect Specialization in "${expEntity.name}": Expected "${expSpec.completeness}" but found "${stuSpec.completeness}".`);
-                    } else {
-                        // Solo verificar overlap si completeness es correcto
-                        if (expSpec.overlap !== stuSpec.overlap) {
-                            if (expSpec.overlap && !stuSpec.overlap) {
-                                errors.push(`Incorrect Specialization in "${expEntity.name}": "${expSpec.completeness}" is correct but missing "${expSpec.overlap}".`);
-                            } else if (!expSpec.overlap && stuSpec.overlap) {
-                                errors.push(`Incorrect Specialization in "${expEntity.name}": Should only have "${expSpec.completeness}", not "${stuSpec.overlap}".`);
-                            } else {
-                                errors.push(`Incorrect Specialization in "${expEntity.name}": "${expSpec.completeness}" is correct but "${stuSpec.overlap}" is incorrect, should be "${expSpec.overlap}".`);
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            // Si NO tiene extends, NO debería tener comentario de especialización
-            if (stuEntity.specialization) {
-                const stuSpec = stuEntity.specialization;
-                const incorrectComment = stuSpec.overlap 
-                    ? `//${stuSpec.completeness},${stuSpec.overlap}` 
-                    : `//${stuSpec.completeness}`;
-                errors.push(`Incorrect Specialization Comment: The entity "${expEntity.name}" does not extend any entity and should NOT have the comment "${incorrectComment}" before its declaration.`);
-            }
+        for (const name of expAttrNames.filter(n => !stuAttrNames.includes(n))) {
+            errors.push(`Entity "${expEntity.name}": the attribute "${name}" is missing.`);
         }
-
-        if (expEntity.attributes.length !== stuEntity.attributes.length) {
-            errors.push(`Problem in Entity "${expEntity.name}": Expected ${expEntity.attributes.length} attributes, but found ${stuEntity.attributes.length}.`);
+        for (const name of stuAttrNames.filter(n => !expAttrNames.includes(n))) {
+            errors.push(`Entity "${expEntity.name}": the attribute "${name}" should not be there.`);
         }
 
         for (const expAttr of expEntity.attributes) {
             const stuAttr = findByName(stuEntity.attributes, expAttr.name);
-            if (!stuAttr) {
-                errors.push(`Missing Attribute in "${expEntity.name}": The attribute "${expAttr.name}" is missing.`);
-            } else {
-                if (expAttr.isKey && !stuAttr.isKey) {
-                    errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should be a key.`);
-                }
-                if (!expAttr.isKey && stuAttr.isKey) {
-                    errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should NOT be a key.`);
-                }
-                if (expAttr.isPartialKey && !stuAttr.isPartialKey) {
-                     errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should be a partial-key.`);
-                }
-                if (!expAttr.isPartialKey && stuAttr.isPartialKey) {
-                     errors.push(`Incorrect Key in "${expEntity.name}": The attribute "${expAttr.name}" should NOT be a partial-key.`);
-                }
-                if (expAttr.isUnique && !stuAttr.isUnique) {
-                     errors.push(`Incorrect Unique constraint in "${expEntity.name}": The attribute "${expAttr.name}" should be marked as UNIQUE (//UNIQUE).`);
-                }
-                if (!expAttr.isUnique && stuAttr.isUnique) {
-                     errors.push(`Incorrect Unique constraint in "${expEntity.name}": The attribute "${expAttr.name}" should NOT be marked as UNIQUE.`);
-                }
+            if (!stuAttr) continue;
+
+            const where = `Entity "${expEntity.name}", attribute "${expAttr.name}"`;
+
+            if (expAttr.isKey !== stuAttr.isKey) {
+                errors.push(expAttr.isKey
+                    ? `${where}: should be marked as "key".`
+                    : `${where}: should not be marked as "key".`);
+            }
+            if (expAttr.isPartialKey !== stuAttr.isPartialKey) {
+                errors.push(expAttr.isPartialKey
+                    ? `${where}: should be marked as "partial-key", since it identifies the entity together with its owner.`
+                    : `${where}: should not be marked as "partial-key".`);
+            }
+            if (expAttr.isUnique !== stuAttr.isUnique) {
+                errors.push(expAttr.isUnique
+                    ? `${where}: should be marked as "unique".`
+                    : `${where}: should not be marked as "unique".`);
             }
         }
     }
 
-    // --- Check Relationships ---
-    if (student.relationships.length !== expected.relationships.length) {
-        errors.push(`Problem: Expected ${expected.relationships.length} relationships, but found ${student.relationships.length}.`);
-    }
+    // ============================================================
+    // JERARQUIAS
+    // Se emparejan por entidad base y conjunto de subclases, no por
+    // nombre: el nombre es un identificador interno que el alumno elige
+    // libremente y que no se representa en el diagrama.
+    // ============================================================
 
-    for (const expRel of expected.relationships) {
-        const stuRel = findByName(student.relationships, expRel.name);
-        if (!stuRel) {
-            errors.push(`Missing Relationship: The relationship "${expRel.name}" is missing.`);
+    const matchedHierarchies = new Set();
+
+    for (const expHier of expected.hierarchies) {
+        const expSubs = subclassesOf(expected, expHier.name);
+        const where = `Hierarchy over "${expHier.base}" [${listOrNone(expSubs)}]`;
+
+        const stuHier = student.hierarchies.find(h =>
+            !matchedHierarchies.has(h) &&
+            h.base === expHier.base &&
+            sameSet(subclassesOf(student, h.name), expSubs)
+        );
+
+        if (!stuHier) {
+            // Emparejamiento laxo por entidad base, para dar un mensaje util
+            const sameBase = student.hierarchies.find(h =>
+                !matchedHierarchies.has(h) && h.base === expHier.base
+            );
+
+            if (sameBase) {
+                matchedHierarchies.add(sameBase);
+                const stuSubs = subclassesOf(student, sameBase.name);
+                errors.push(`Hierarchy over "${expHier.base}": expected the subclasses [${listOrNone(expSubs)}] but found [${listOrNone(stuSubs)}]. Each subclass must be declared with "extends ${sameBase.name}".`);
+            } else {
+                errors.push(`Missing hierarchy: there should be a ${describeHierarchy(expected, expHier)}, declared as "${hierarchyProps(expHier)}".`);
+            }
             continue;
         }
 
-        if (expRel.isWeak && !stuRel.isWeak) {
-            errors.push(`Incorrect Relationship Type: The relationship "${expRel.name}" should be marked as weak.`);
-        }
-        if (!expRel.isWeak && stuRel.isWeak) {
-            errors.push(`Incorrect Relationship Type: The relationship "${expRel.name}" should NOT be marked as weak.`);
-        }
+        matchedHierarchies.add(stuHier);
 
+        if (expHier.completeness !== stuHier.completeness) {
+            const reason = expHier.completeness === 'total'
+                ? 'every instance of the superclass must belong to one of the subclasses'
+                : 'an instance of the superclass may belong to none of the subclasses';
+            errors.push(`${where}: should be "${expHier.completeness}" instead of "${stuHier.completeness}", because ${reason}.`);
+        } else if (expHier.constraint !== stuHier.constraint) {
+            if (expHier.constraint && !stuHier.constraint) {
+                errors.push(`${where}: "${expHier.completeness}" is correct, but "${expHier.constraint}" is missing. With two or more subclasses the constraint must always be stated.`);
+            } else if (!expHier.constraint && stuHier.constraint) {
+                errors.push(`${where}: should be only "${expHier.completeness}", without "${stuHier.constraint}". With a single subclass there is nothing that can overlap or be disjoint.`);
+            } else {
+                const reason = expHier.constraint === 'disjoint'
+                    ? 'an instance cannot belong to more than one subclass at the same time'
+                    : 'an instance may belong to more than one subclass at the same time';
+                errors.push(`${where}: should be "${expHier.constraint}" instead of "${stuHier.constraint}", because ${reason}.`);
+            }
+        }
+    }
+
+    for (const stuHier of student.hierarchies) {
+        if (!matchedHierarchies.has(stuHier)) {
+            errors.push(`Unexpected hierarchy: there should not be a ${describeHierarchy(student, stuHier)}.`);
+        }
+    }
+
+    // ============================================================
+    // RELACIONES
+    // Las normales se emparejan por nombre, porque el nombre se representa
+    // en el diagrama. Las asociativas se emparejan por las entidades que
+    // conectan, porque su nombre no se dibuja y el alumno lo elige libremente.
+    // ============================================================
+
+    const expNormalRels = expected.relationships.filter(r => !r.isAssociative);
+    const stuNormalRels = student.relationships.filter(r => !r.isAssociative);
+    const expAssocRels = expected.relationships.filter(r => r.isAssociative);
+    const stuAssocRels = student.relationships.filter(r => r.isAssociative);
+
+    const checkLinks = (expRel, stuRel, where) => {
         if (expRel.links.length !== stuRel.links.length) {
-            errors.push(`Problem in Relationship "${expRel.name}": Expected ${expRel.links.length} links, but found ${stuRel.links.length}.`);
-        } else {
-            // Verificar cada link esperado
-            for (const expLink of expRel.links) {
-                // Buscar si existe un link que coincida (en cualquier dirección)
-                const matchingLink = stuRel.links.find(stuLink => {
-                    // Dirección normal: A -> B
-                    const normalMatch = 
-                        stuLink.from === expLink.from && 
-                        stuLink.to === expLink.to &&
-                        stuLink.fromCardinality === expLink.fromCardinality &&
-                        stuLink.toCardinality === expLink.toCardinality &&
-                        stuLink.fromRole === expLink.fromRole &&
-                        stuLink.toRole === expLink.toRole;
-                    
-                    // Dirección inversa: B -> A (intercambiando también las cardinalidades Y roles)
-                    const reverseMatch = 
-                        stuLink.from === expLink.to && 
-                        stuLink.to === expLink.from &&
-                        stuLink.fromCardinality === expLink.toCardinality &&
-                        stuLink.toCardinality === expLink.fromCardinality &&
-                        stuLink.fromRole === expLink.toRole &&
-                        stuLink.toRole === expLink.fromRole;
-                    
-                    return normalMatch || reverseMatch;
-                });
-                
-                if (!matchingLink) {
-                    const fromDesc = expLink.fromRole ? `${expLink.from}[${expLink.fromCardinality} | "${expLink.fromRole}"]` : `${expLink.from}[${expLink.fromCardinality}]`;
-                    const toDesc = expLink.toRole ? `${expLink.to}[${expLink.toCardinality} | "${expLink.toRole}"]` : `${expLink.to}[${expLink.toCardinality}]`;
-                    errors.push(`Incorrect Link in "${expRel.name}": Expected link between ${fromDesc} and ${toDesc} not found or has wrong cardinalities/roles.`);
-                }
+            errors.push(`${where}: expected ${expRel.links.length} connection(s) between entities, but found ${stuRel.links.length}.`);
+            return;
+        }
+
+        for (const expLink of expRel.links) {
+            const matchingLink = stuRel.links.find(stuLink => {
+                const normalMatch =
+                    stuLink.from === expLink.from &&
+                    stuLink.to === expLink.to &&
+                    stuLink.fromCardinality === expLink.fromCardinality &&
+                    stuLink.toCardinality === expLink.toCardinality &&
+                    stuLink.fromRole === expLink.fromRole &&
+                    stuLink.toRole === expLink.toRole;
+
+                const reverseMatch =
+                    stuLink.from === expLink.to &&
+                    stuLink.to === expLink.from &&
+                    stuLink.fromCardinality === expLink.toCardinality &&
+                    stuLink.toCardinality === expLink.fromCardinality &&
+                    stuLink.fromRole === expLink.toRole &&
+                    stuLink.toRole === expLink.fromRole;
+
+                return normalMatch || reverseMatch;
+            });
+
+            if (matchingLink) continue;
+
+            // Se busca un enlace entre las mismas entidades para poder decir
+            // exactamente que es lo que no cuadra
+            const sameEntities = stuRel.links.find(l =>
+                (l.from === expLink.from && l.to === expLink.to) ||
+                (l.from === expLink.to && l.to === expLink.from)
+            );
+
+            const expDesc = `${describeEndpoint(expLink.from, expLink.fromCardinality, expLink.fromRole)} -> ${describeEndpoint(expLink.to, expLink.toCardinality, expLink.toRole)}`;
+
+            if (sameEntities) {
+                const stuDesc = `${describeEndpoint(sameEntities.from, sameEntities.fromCardinality, sameEntities.fromRole)} -> ${describeEndpoint(sameEntities.to, sameEntities.toCardinality, sameEntities.toRole)}`;
+                errors.push(`${where}: the connection between "${expLink.from}" and "${expLink.to}" is not correct. Expected ${expDesc} but found ${stuDesc}.`);
+            } else {
+                errors.push(`${where}: there should be a connection ${expDesc}.`);
+            }
+        }
+    };
+
+    const checkRelAttributes = (expRel, stuRel, where) => {
+        const expNames = expRel.attributes.map(a => a.name);
+        const stuNames = stuRel.attributes.map(a => a.name);
+
+        for (const name of expNames.filter(n => !stuNames.includes(n))) {
+            errors.push(`${where}: the attribute "${name}" is missing.`);
+        }
+        for (const name of stuNames.filter(n => !expNames.includes(n))) {
+            errors.push(`${where}: the attribute "${name}" should not be there.`);
+        }
+    };
+
+    // --- Relaciones normales, emparejadas por nombre ---
+    const expNormalNames = expNormalRels.map(r => r.name);
+    const stuNormalNames = stuNormalRels.map(r => r.name);
+
+    for (const name of stuNormalNames.filter(n => !expNormalNames.includes(n))) {
+        const stuRel = findByName(stuNormalRels, name);
+        const ends = endpointsOf(stuRel);
+        const belongsToAssoc = expAssocRels.some(r => sameSet(endpointsOf(r), ends));
+
+        // Si coincide con una asociativa esperada, el error real es el tipo,
+        // y se informa mas abajo al tratar las asociativas
+        if (!belongsToAssoc) {
+            errors.push(`Unexpected relationship: "${name}" should not be part of this model.`);
+        }
+    }
+
+    for (const expRel of expNormalRels) {
+        const where = `Relationship "${expRel.name}"`;
+        let stuRel = findByName(stuNormalRels, expRel.name);
+
+        if (!stuRel) {
+            const misclassified = findByName(stuAssocRels, expRel.name);
+            if (misclassified) {
+                errors.push(`${where}: should be a normal relationship, not an associative one. Only the relationships that identify an associative entity are declared with "associative relationship".`);
+                stuRel = misclassified;
+            } else {
+                errors.push(`Missing relationship: "${expRel.name}" is not declared.`);
+                continue;
             }
         }
 
-        // AÑADIR: Verificar atributos de la relación
-        if (expRel.attributes.length !== stuRel.attributes.length) {
-            errors.push(`Problem in Relationship "${expRel.name}": Expected ${expRel.attributes.length} attributes, but found ${stuRel.attributes.length}.`);
+        if (expRel.isWeak !== stuRel.isWeak) {
+            errors.push(expRel.isWeak
+                ? `${where}: should be declared as "weak relationship", because it links a weak entity with its owner.`
+                : `${where}: should be a normal relationship, not a weak one.`);
         }
 
-        for (const expAttr of expRel.attributes) {
-            const stuAttr = findByName(stuRel.attributes, expAttr.name);
-            if (!stuAttr) {
-                errors.push(`Missing Attribute in Relationship "${expRel.name}": The attribute "${expAttr.name}" is missing.`);
+        checkLinks(expRel, stuRel, where);
+        checkRelAttributes(expRel, stuRel, where);
+    }
+
+    // --- Relaciones asociativas, emparejadas por las entidades que conectan ---
+    const matchedAssocRels = new Set();
+
+    for (const expRel of expAssocRels) {
+        const expEnds = endpointsOf(expRel);
+        const where = `Associative relationship between ${expEnds.join(' and ')}`;
+
+        const stuRel = stuAssocRels.find(r =>
+            !matchedAssocRels.has(r) && sameSet(endpointsOf(r), expEnds)
+        );
+
+        if (!stuRel) {
+            const misclassified = stuNormalRels.find(r => sameSet(endpointsOf(r), expEnds));
+
+            if (misclassified) {
+                errors.push(`Relationship "${misclassified.name}": should be declared as "associative relationship", because it connects the associative entity with one of the entities that identify it.`);
+            } else {
+                errors.push(`Missing associative relationship: there should be one connecting ${expEnds.join(' and ')}.`);
             }
+            continue;
+        }
+
+        matchedAssocRels.add(stuRel);
+        checkLinks(expRel, stuRel, where);
+        checkRelAttributes(expRel, stuRel, where);
+    }
+
+    for (const stuRel of stuAssocRels) {
+        if (!matchedAssocRels.has(stuRel)) {
+            const ends = endpointsOf(stuRel);
+            errors.push(`Unexpected associative relationship: "${stuRel.name}" connects ${ends.join(' and ')} and should not be part of this model.`);
         }
     }
 
     return errors;
 }
 
-// --- 4. DOM EVENT LISTENERS ---
-// This code runs when the page is loaded.
-document.addEventListener('DOMContentLoaded', () => {
+
+// --- 5. UI INITIALISATION ---
+function initErdChecker() {
     const studentTextArea = document.getElementById('studentSolution');
     const checkButton = document.getElementById('checkBtn');
     const submitButton = document.getElementById('submitBtn');
     const resultsDiv = document.getElementById('results');
     const loadStatusDiv = document.getElementById('loadStatus');
 
-    // --- Helper function to display load status ---
     function displayLoadStatus(result) {
-        loadStatusDiv.innerHTML = ''; // Clear previous content
-        
+        loadStatusDiv.innerHTML = '';
+
         if (!result.success) {
-            // Hide controls
             studentTextArea.style.display = 'none';
             checkButton.disabled = true;
             submitButton.disabled = true;
-            // Error display
+
             const icon = result.isWarning ? '⚠️' : '❌';
             const title = document.createElement('div');
             title.style.fontWeight = 'bold';
             title.style.marginBottom = '8px';
             title.textContent = `${icon} ${result.message}`;
-            
+
             const details = document.createElement('div');
             details.style.fontSize = '13px';
             details.style.marginTop = '4px';
             details.textContent = result.details || '';
-            
+
             if (result.suggestion) {
                 const suggestion = document.createElement('div');
                 suggestion.style.fontSize = '13px';
@@ -530,84 +725,51 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadStatusDiv.appendChild(title);
                 loadStatusDiv.appendChild(details);
             }
-            
+
             loadStatusDiv.className = result.isWarning ? 'warning' : 'error';
-            
-            // Disable button if it's a hard error (not just a warning)
+
             if (!result.isWarning) {
-                //checkButton.disabled = true;
                 submitButton.disabled = true;
             }
-        } 
-        /*
-        else {
-            // Success display
-            const icon = '✓';
-            const title = document.createElement('div');
-            title.style.fontWeight = 'bold';
-            title.textContent = `${icon} ${result.message}`;
-            
-            if (result.details) {
-                const details = document.createElement('div');
-                details.style.fontSize = '13px';
-                details.style.marginTop = '4px';
-                details.style.opacity = '0.8';
-                details.textContent = result.details;
-                loadStatusDiv.appendChild(title);
-                loadStatusDiv.appendChild(details);
-            } else {
-                loadStatusDiv.appendChild(title);
-            }
-            
-            loadStatusDiv.className = 'success';
-        } */
+        }
     }
 
-    // --- Load expected solution from URL ---
     const loadResult = loadExpectedSolution();
     displayLoadStatus(loadResult);
-    
-    // Stop here if loading failed (and it's not just a warning)
+
     if (!loadResult.success && !loadResult.isWarning) {
         return;
     }
 
-//Get the message from iframe document
+    // Get the message from iframe document
     window.addEventListener('message', function (event) {
         console.log('Message received: ', event.data);
-        // Very important: check the origin of the message in production!
         if (event.origin !== 'https://campusvirtual.unex.es') return;
 
-        if (event.source === this.window.parent) {
+        if (event.source === window.parent) {
             console.log('Parent received message:', event.data);
-
             const submitBt = document.getElementById("submitBtn");
-            submitBt.hidden = false;//event.data;
+            submitBt.hidden = false;
         }
     });
 
-    //ping the window.parent in case loaded in a iframe    
+    // ping the window.parent in case loaded in an iframe
     const message = { type: 'ping' };
     window.parent.postMessage(message, '*');
 
-    // --- Initialize CodeMirror with ERD syntax highlighting ---
-    // Define custom ERD mode
+    // --- CodeMirror con resaltado de la sintaxis actual ---
+    // derived, multivalued y optional no se resaltan: no se usan en la
+    // asignatura y no conviene sugerir que forman parte de lo que se pide
     CodeMirror.defineSimpleMode("erd", {
         start: [
-            // Keywords
-            {regex: /\b(erdiagram|entity|relationship|weak)\b/, token: "keyword"},
-            // Attribute types (key, partial-key, derived)
-            {regex: /\b(key|partial-key|derived)\b/, token: "attribute"},
-            // Cardinality brackets
-            {regex: /\[[\d\.\*N|:\w\s"]+\]/, token: "number"},
-            // Arrows
+            {regex: /\b(erdiagram|notation|entity|relationship|hierarchy|weak|associative|extends)\b/, token: "keyword"},
+            {regex: /\b(total|partial|disjoint|overlapping)\b/, token: "def"},
+            {regex: /\b(key|partial-key|unique)\b/, token: "attribute"},
+            {regex: /\[[\d.*N|:\w\s"]+\]/, token: "number"},
             {regex: /->/, token: "operator"},
-            // Comments (C++ style)
             {regex: /\/\/.*/, token: "comment"},
             {regex: /\/\*/, token: "comment", next: "comment"},
-            // Braces
             {regex: /[{}]/, token: "bracket"},
-            // Identifiers (entity names, attribute names, etc.)
             {regex: /[a-zA-Z_]\w*/, token: "variable"}
         ],
         comment: [
@@ -616,7 +778,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     });
 
-    // Initialize CodeMirror editor
     const editor = CodeMirror.fromTextArea(studentTextArea, {
         mode: "erd",
         theme: "monokai",
@@ -627,7 +788,6 @@ document.addEventListener('DOMContentLoaded', () => {
         indentWithTabs: false
     });
 
-    // --- Load saved solution from cookie if exists ---
     const savedSolution = getCookie(CONFIG.COOKIE_NAME);
     if (savedSolution) {
         editor.setValue(savedSolution);
@@ -636,9 +796,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- Handle the Check button click ---
+    // --- Check button ---
     checkButton.addEventListener('click', () => {
-        // 1. Get student's text from CodeMirror editor
         const studentText = editor.getValue();
         if (!studentText) {
             resultsDiv.textContent = 'Please enter your solution first.';
@@ -648,7 +807,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // 2. Parse both solutions
             const studentERD = parseERD(studentText);
             const expectedERD = parseERD(expectedSolutionText);
 
@@ -657,45 +815,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.log('Expected ERD:', expectedERD);
             }
 
-            // 3. Compare them
             const errors = compareSolutions(studentERD, expectedERD);
 
-            // 4. Display results and enable/disable Submit button
             if (errors.length === 0) {
                 resultsDiv.textContent = '✓ Solution is correct! Great job!';
                 resultsDiv.className = 'success';
-                submitButton.disabled = false; // Enable submit button on success
+                submitButton.disabled = false;
             } else {
-                resultsDiv.textContent = 'Found some issues:\n\n- ' + errors.join('\n- ');
+                const heading = errors.length === 1
+                    ? 'Found 1 issue:'
+                    : `Found ${errors.length} issues:`;
+                resultsDiv.textContent = heading + '\n\n- ' + errors.join('\n- ');
                 resultsDiv.className = 'error';
-                submitButton.disabled = true; // Keep submit button disabled on error
+                submitButton.disabled = true;
             }
 
         } catch (e) {
-            // Handle any parsing errors
             if (CONFIG.isDevelopment) {
                 console.error('Parsing error:', e);
             }
-            resultsDiv.textContent = '❌ Error parsing your solution:\n\n' + e.message + '\n\nPlease check your ERD syntax.';
+            resultsDiv.textContent = '❌ Your solution could not be read:\n\n' + e.message + '\n\nFix the syntax and try again.';
             resultsDiv.className = 'error';
-            submitButton.disabled = true; // Keep submit button disabled on error
+            submitButton.disabled = true;
         }
     });
 
-    // --- Handle the Submit button click ---
+    // --- Submit button ---
     submitButton.addEventListener('click', () => {
-        // Save the student solution to cookie
         const studentText = editor.getValue();
         setCookie(CONFIG.COOKIE_NAME, studentText, CONFIG.COOKIE_EXPIRY_DAYS);
-        
+
         if (CONFIG.isDevelopment) {
             console.log('Student solution saved to cookie');
         }
-        
-        const hash = CryptoJS.MD5(expectedSolutionText.trim()).toString(); // Calculate MD5 hash
-        console.log("MD5 Hash of Solution:", hash); // Log the hash
-        //console.log(tableString.trim()); // Log the hash
+
+        const hash = CryptoJS.MD5(expectedSolutionText.trim()).toString();
+        console.log("MD5 Hash of Solution:", hash);
         const message = { type: 'md5', hash: hash };
-        window.parent.postMessage(message, 'https://campusvirtual.unex.es'); //Send MD5 hash to parent window
+        window.parent.postMessage(message, 'https://campusvirtual.unex.es');
     });
-});
+}
+
+// En el navegador el checker arranca con el DOM.
+// En Node no hay document, y el fichero se limita a exportar el parser y
+// la comparacion para que los tests usen exactamente el mismo codigo.
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', initErdChecker);
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { parseERD, compareSolutions };
+}

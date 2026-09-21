@@ -39,17 +39,17 @@ weak relationship dispone_de {
 entity Usuario {
     dni key
     nombre
-    apellido1
-    apellido2
+    apellido_1
+    apellido_2
     email
     telefono
     tarjeta_credito
 }
 
 weak entity Alquiler {
-    fec_ini_alquiler partial-key
-    hora_ini_alquiler partial-key
-    hora_fin_alquiler 
+    fecha_inicio partial-key
+    hora_inicio partial-key
+    hora_fin 
 }
 
 weak relationship usado_en {

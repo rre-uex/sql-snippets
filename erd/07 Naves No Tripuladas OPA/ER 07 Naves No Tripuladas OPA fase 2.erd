@@ -41,14 +41,13 @@ entity Empleado {
     categoria_profesional
 }
 
-//parcial,disjunta
-entity Ingeniero_Aeroespacial extends Empleado {
-    numero_Empleado key
+hierarchy h_empleado Empleado partial
+
+entity Ingeniero_Aeroespacial extends h_empleado {
+    numero_empleado key
 }
 
 relationship responsable_de {
     Nave[1..1] -> Ingeniero_Aeroespacial[1..1]
 }
-
-
 

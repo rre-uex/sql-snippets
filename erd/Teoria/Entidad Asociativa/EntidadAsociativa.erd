@@ -1,35 +1,33 @@
 erdiagram Model
 notation=crowsfoot
 
-entity PUESTO_DE_TRABAJO {
+entity Puesto_de_Trabajo {
     id_puesto key
     nombre_puesto
 }
 
-entity COMPETENCIA {
+entity Competencia {
     id_competencia key
     nombre_competencia
 }
 
-entity VALIDADOR {
+entity Validador {
     id_validador key
     rol_empresa
 }
 
-entity ASOC_REQUISITO_DE_PUESTO {
-id_puesto key
-id_competencia key
+associative entity Asoc_Requisito_Puesto {
 }
 
-relationship requiere {
-    PUESTO_DE_TRABAJO[1..1] -> ASOC_REQUISITO_DE_PUESTO[1..N]
+associative relationship requiere {
+    Puesto_de_Trabajo[1..1] -> Asoc_Requisito_Puesto[1..N]
 }
 
-relationship es_requerida_por {
-    COMPETENCIA[1..1] -> ASOC_REQUISITO_DE_PUESTO[1..N]
+associative relationship es_requerida_por {
+    Competencia[1..1] -> Asoc_Requisito_Puesto[0..N]
 }
 
 
 relationship validada_por {
-    ASOC_REQUISITO_DE_PUESTO[0..N] -> VALIDADOR[1..1]
+    Asoc_Requisito_Puesto[0..N] -> Validador[1..1]
 }
