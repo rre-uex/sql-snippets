@@ -70,18 +70,32 @@ console.log(url);
 ## ERD Validation Features
 
 The checker validates:
-- ✅ Entity definitions (strong/weak)
+- ✅ Entity definitions (strong/weak/associative)
 - ✅ Entity attributes and keys
 - ✅ Partial keys for weak entities
-- ✅ Relationships (strong/weak)
+- ✅ Unique constraints (`unique` keyword)
+- ✅ Relationships (strong/weak/associative)
 - ✅ Relationship attributes
 - ✅ Cardinalities and roles
-- ✅ Entity specialization (parcial/total, solapada/disjunta)
-- ✅ Unique constraints (//UNIQUE)
+- ✅ Hierarchies: completeness (`total`/`partial`) and constraint (`disjoint`/`overlapping`)
+- ✅ Multi-level hierarchies and several hierarchies over the same base entity
+- ✅ Associative entities and the relationships that identify them
 - ✅ Ternary relationships
 - ✅ Recursive relationships with roles
 
-## Testing
+### How hierarchies and associative relationships are compared
+
+Two elements of the language have names that are **not** shown in the diagram,
+so the checker never compares them by name:
+
+- **Hierarchies** are matched by their base entity and their set of subclasses.
+  A student who writes `hierarchy h_persona` and one who writes
+  `hierarchy jerarquia_personas` describe the same model, so both are accepted.
+- **Associative relationships** are matched by the entities they connect, for
+  the same reason.
+
+Ordinary relationships *are* matched by name, because the name is drawn in the
+diagram and is therefore part of the model.
 
 Comprehensive automated test suites ensure the ERD checker works correctly.
 
@@ -107,39 +121,47 @@ npm run test:the-expanse
 
 ### Test Coverage
 
-#### Integration Tests ⭐ NUEVO
-Tests the complete encoding/decoding cycle using the **real parser from `app.js`**:
+Tests import `parseERD` and `compareSolutions` directly from `app.js`, so they
+always exercise the code that actually runs in the browser.
+
+#### Integration Tests
+Tests the complete encoding/decoding cycle:
 - ✅ Base64 encoding preserves content exactly
 - ✅ URL decoding works correctly
 - ✅ Special characters (accents, ñ) are preserved
-- ✅ **Full ERD validation** with complete error detection (cardinalidades, atributos, roles, especialización, etc.)
+- ✅ Full ERD validation on top of the decoded content
 
-**Total: 8 integration tests - ALL PASSING ✅** covering all three ERD exercises with complete validation.
+The error cases do **not** assert an exact error count. Each case declares the
+behaviours it must detect, with the pattern that identifies each one, so a
+reworded message never breaks a test and the test itself documents what it
+covers.
+
+**Total: 8 integration tests**
 
 #### Ternaria Tests
 - ✅ Correct solution validation
 - ✅ Incorrect cardinalities detection
-- ✅ Missing relationship links detection
+- ✅ Ternary relationship modelled with two participants instead of three
 
 #### Superhéroes Tests
 - ✅ Correct solution validation
-- ✅ Multiple error types (9 different validation scenarios)
-  - Weak/strong entity errors
-  - Redundant attributes
-  - Missing/extra relationship attributes
-  - Missing roles in recursive relationships
-  - Redundant relationships
+- ✅ Nine distinct validation behaviours
+  - Missing and redundant attributes
+  - Weak entity marked as strong, and the other way round
+  - Missing and redundant relationships
+  - Wrong cardinalities
+  - Missing relationship attributes
+  - Weak relationship not marked as such
 
 #### The Expanse Tests
 - ✅ Correct solution validation
-- ✅ Complex error detection (23 different validation scenarios)
-  - Wrong number of entities
-  - Missing/redundant attributes
-  - Incorrect keys and UNIQUE constraints
-  - Specialization errors (total/parcial, disjunta/solapada)
-  - Cardinality errors in weak entity relationships
+- ✅ Eight distinct validation behaviours on the most complex model
+  - Missing and redundant entities
+  - Subclass hanging from the wrong superclass
+  - Missing and redundant hierarchies
+  - Misnamed attributes
+  - Missing links inside a relationship
   - Missing relationships
-  - Wrong participating entities
 
 ### Test Documentation
 - 📄 [tests/README.md](tests/README.md) - General test overview
@@ -147,37 +169,39 @@ Tests the complete encoding/decoding cycle using the **real parser from `app.js`
 - 📄 [tests/README_INTEGRATION_TESTS.md](tests/README_INTEGRATION_TESTS.md) - Integration tests documentation
 - 📄 [tests/INTEGRATION_TESTS_SUMMARY.md](tests/INTEGRATION_TESTS_SUMMARY.md) - Integration tests summary
 
-**Total Test Suite: 15 tests - ALL PASSING ✅** (8 integration + 7 validation)
-
+**Total Test Suite: 15 tests** (8 integration + 7 validation)
 ## Project Structure
 
 ```
 sql-snippets/
-├── app.js                              # ERD checker (standard version)
-├── appParametrizable.js                # ERD checker (parametrizable version)
+├── app.js                              # ERD checker: parser, comparison and UI
 ├── encode-erd.js                       # CLI tool to encode ERD files to base64
-├── erd-checker.html                    # Standard ERD checker page
-├── erd-checker-parametrizable.html     # Parametrizable ERD checker page
+├── erd-checker.html                    # ERD checker page
+├── erd-checker.js                      # Block embedded in the campus (builds the iframe)
 ├── index.html                          # Main page
 ├── package.json                        # npm scripts and project metadata
 ├── db/                                 # SQLite databases
 ├── doc/                                # Documentation
-├── erd/                                # ERD test files
-│   ├── Ternaria correcto.erd
-│   ├── Ternaria incorrecta cardinalidades incorrectas.erd
-│   ├── Ternaria incorrecta falta relacion.erd
-│   ├── Enunciado 1 ER Superhéroesv1 completo.erd
-│   ├── Enunciado 1 ER Superhéroesv1 incorrecto.erd
-│   ├── Enunciado 4 ER The Expanse v2 completo.erd
-│   └── Enunciado 4 ER The Expanse v2 incorrecto.erd
+├── legacy/
+│   └── app-old.js                      # Pre-September-2026 checker, kept for reference
+├── tools/
+│   ├── migrate-erd.js                  # Migrates .erd files to the current syntax
+│   └── regen-campus.js                 # Generates the base64 + MD5 pair per exercise
+│   └── regen-_campus_web.js            # Generates the base64 + MD5 pair per exercise on html
+├── erd/                                # ERD exercise files, one folder per domain
+│   ├── 01 Superheroes/
+│   ├── 04 The Expanse Completo/
+│   ├── Labs/
+│   ├── Teoria/
+│   └── ...
 └── tests/                              # Test files
-    ├── test-integration-encoding.js    # Integration tests (encoding/decoding) ⭐ NUEVO
-    ├── test-ternaria.js                # Ternaria relationship tests
+    ├── test-integration-encoding.js    # Encoding/decoding plus validation
+    ├── test-ternaria.js                # Ternary relationship tests
     ├── test-superheroes.js             # Superhéroes exercise tests
     ├── test-the-expanse.js             # The Expanse exercise tests
     ├── README.md                       # Tests documentation
     ├── README_TESTS.md                 # Detailed test cases documentation
-    └── README_INTEGRATION_TESTS.md     # Integration tests documentation ⭐ NUEVO
+    └── README_INTEGRATION_TESTS.md     # Integration tests documentation
 ```
 
 ## Development
@@ -210,11 +234,12 @@ notation=crowsfoot
 entity Student {
     student_id key
     name
-    email //UNIQUE
+    email unique
 }
 
-weak entity Enrollment {
-    grade partial-key
+entity Course {
+    course_id key
+    title
 }
 
 relationship enrolledIn {
@@ -222,16 +247,47 @@ relationship enrolledIn {
     enrollment_date
 }
 
-weak relationship has {
-    Enrollment[0..N] -> Student[1..1]
+weak entity Attendance {
+    session_date partial-key
 }
 
-//parcial,solapada
-entity GraduateStudent extends Student {
+weak relationship attends {
+    Student[1..1] -> Attendance[0..N]
+}
+
+// A hierarchy is a named element of the model. Several hierarchies may share
+// the same base entity, and a subclass may itself be the base of another one.
+hierarchy h_student Student partial overlapping
+
+entity GraduateStudent extends h_student {
     student_id key
     thesis_topic
 }
+
+entity ExchangeStudent extends h_student {
+    student_id key
+    home_university
+}
+
+// An associative entity declares no key of its own: it is identified by the
+// entities it associates, which are the ones linked to it by an
+// "associative relationship".
+associative entity Registration {
+    registered_at
+}
+
+associative relationship student_registration {
+    Student[1..1] -> Registration[1..N]
+}
+
+associative relationship course_registration {
+    Course[1..1] -> Registration[1..N]
+}
 ```
+
+With a single subclass a hierarchy can only be `partial`, since there is
+nothing that could overlap or be disjoint. With two or more subclasses the
+constraint is mandatory.
 
 ## License
 

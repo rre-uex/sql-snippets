@@ -1,119 +1,131 @@
 # Tests de Integración: Encoding Base64
 
-## 📋 Descripción
+## Descripción
 
-Los tests de integración verifican el **proceso completo** de codificación/decodificación base64 que se usa en `erd-checker-parametrizable.html`. Estos tests:
+Los tests de integración verifican el proceso completo de codificación y
+decodificación en base64 que usa el checker cuando se sirve desde el campus
+virtual:
 
-1. ✅ Codifican archivos `.erd` a base64 (como `encode-erd.js`)
-2. ✅ Decodifican el base64 (como `appParametrizable.js`)
-3. ✅ Verifican preservación del contenido al 100%
-4. ✅ **Usan el parser REAL de `app.js`** para detectar todos los errores
-5. ✅ Validan el flujo completo end-to-end
+1. Codifican un fichero `.erd` a base64, igual que `encode-erd.js`
+2. Decodifican el base64, igual que `app.js`
+3. Verifican que el contenido se preserva byte a byte
+4. Parsean y comparan el modelo con el parser real de `app.js`
 
-## 🎯 Objetivo
+## Objetivo
 
-Estos tests responden a la pregunta: **"¿Funciona realmente el sistema de URLs con base64?"**
+Responden a una pregunta que los tests de validación no cubren: **¿sobrevive
+el modelo al viaje por la URL?**
 
-A diferencia de los tests unitarios (`test-ternaria.js`, `test-superheroes.js`, `test-the-expanse.js`) que verifican la lógica de comparación, estos tests verifican que el **ciclo completo de encoding/decoding** funciona correctamente.
+Los otros tres ficheros (`test-ternaria.js`, `test-superheroes.js`,
+`test-the-expanse.js`) comprueban la lógica de comparación partiendo del texto
+en claro. Estos comprueban que ese texto llega intacto.
 
-## 🔄 Flujo del Test
+## Flujo
 
 ```
-Archivo .erd original
+Fichero .erd original
     ↓
-🔒 Codificación base64 (como encode-erd.js)
+Codificación base64 (como encode-erd.js)
+    Buffer.from(encodeURIComponent(texto)).toString('base64')
     ↓
-Base64 string (URL query parameter)
+Cadena base64  →  checker_parameter en el campus
     ↓
-🔓 Decodificación (como appParametrizable.js)
+erd-checker.js monta la URL:  erd-checker.html?s=<base64>
+    ↓
+Decodificación (como app.js)
+    decodeURIComponent(atob(base64))
     ↓
 Texto decodificado
     ↓
-✓ Verificación: ¿coincide con el original?
+¿Coincide exactamente con el original?
     ↓
-🔍 Parsing y comparación ERD
+Parseo y comparación del modelo
 ```
 
-## 📊 Casos de Test
+## De dónde sale el código que se prueba
 
-### Test 1-3: Ternaria
-- **Correcto**: Verifica que el encoding/decoding no altera el contenido
-- **Cardinalidades incorrectas**: Preservación exacta del contenido
-- **Falta relación**: Verificación de detección de errores post-decoding
+```javascript
+const { parseERD, compareSolutions } = require('../app.js');
+```
 
-### Test 4-5: Superhéroes
-- **Completo**: 948 caracteres → 1992 base64 → 948 caracteres
-- **9 errores**: Verifica detección de errores con contenido decodificado
+No hay copia del parser en el test. `app.js` registra su interfaz solo cuando
+existe `document`, y exporta `parseERD` y `compareSolutions` al cargarse desde
+Node, así que estos tests ejercitan exactamente el código que corre en el
+navegador.
 
-### Test 6-7: The Expanse
-- **Completo**: 2312 caracteres → 4952 base64 → 2312 caracteres
-- **23 errores**: Test más complejo de encoding/decoding
+Esto no siempre fue así: el fichero llegó a tener una copia del parser pegada
+a mano, que se quedó desfasada sin que ningún test lo detectara. De ahí la
+importancia de importar en lugar de copiar.
 
-### Test 8: Caracteres Especiales
-- Verifica preservación de:
-  - Acentos (á, é, í, ó, ú)
-  - Letra ñ
-  - Espacios y saltos de línea
-  - Caracteres especiales en comentarios
+## Casos de test
 
-## ✅ Resultados Esperados
+| Caso | Fichero correcto | Fichero del alumno | Qué comprueba |
+|---|---|---|---|
+| 1 | Ternaria correcto | el mismo | Cero errores |
+| 2 | Ternaria correcto | cardinalidades incorrectas | Detecta las dos cardinalidades cambiadas |
+| 3 | Ternaria correcto | falta un participante | Detecta que la ternaria tiene un enlace en vez de dos |
+| 4 | Superhéroes final | el mismo | Cero errores |
+| 5 | Superhéroes final | incorrecto | Nueve comportamientos distintos |
+| 6 | The Expanse final | el mismo | Cero errores |
+| 7 | The Expanse final | incorrecto | Ocho comportamientos, incluidas las jerarquías |
+| 8 | Ternaria correcto | el mismo | Preservación de acentos, ñ y espacios |
 
-### Todos los tests pasan al 100%
-- ✓ 8/8 tests pasando completamente
-- ✓ Contenido preservado al 100% (8/8 tests)
-- ✓ Detección de errores completa usando parser real de `app.js`
-- ✓ Caracteres especiales preservados (8/8 tests)
+## Por qué no se cuenta el número de errores
 
-### Comparación con versión anterior
+Los casos con errores declaran los **comportamientos que deben detectarse**, no
+cuántos errores debe producir el checker:
 
-**ANTES** (parser simplificado):
-- ✓ 5/8 tests pasaban completamente
-- ✓ 8/8 preservación de contenido
-- ⚠️ Parser simplificado no detectaba todos los errores
+```javascript
+mustDetect: [
+    ['entidad que falta',    /Missing entity: "Mineral"/],
+    ['entidad que sobra',    /Unexpected entity: "Dron"/],
+    ['superclase equivocada',/Entity "Directivo": should be a subclass of "Personal"/],
+    ['jerarquía que falta',  /Missing hierarchy: .*over "Personal"/]
+]
+```
 
-**AHORA** (parser real de app.js):
-- ✓ **8/8 tests pasan completamente** 🎉
-- ✓ 8/8 preservación de contenido
-- ✓ **Detecta TODOS los tipos de errores**:
-  - Cardinalidades incorrectas
-  - Atributos faltantes/sobrantes
-  - Roles en relaciones recursivas
-  - Especialización (parcial/total, solapada/disjunta)
-  - Restricciones UNIQUE
-  - Claves incorrectas
-  - Y mucho más...
+Contar errores hacía el test frágil: cualquier mejora en la redacción de un
+mensaje lo rompía sin que nada estuviera mal. Y un número como "43 errores" no
+documenta nada sobre lo que se está cubriendo.
 
-## 🚀 Ejecución
+Con este criterio, cuando un caso falla el mensaje dice qué comprobación se ha
+perdido, en lugar de que dos cifras no coinciden.
+
+Los casos que comparan una solución correcta consigo misma sí exigen cero
+errores, que ahí es una afirmación con sentido: si aparece algo, hay un
+problema real.
+
+## Ejecución
 
 ```bash
-# Ejecutar solo tests de integración
+# Solo los tests de integración
 npm run test:integration
 
-# Ejecutar todos los tests (incluye integración)
+# Todos
 npm test
 ```
 
-## 📈 Interpretación de Resultados
+## Interpretación de la salida
 
-### ✓ Test Exitoso
 ```
-Test 1/8: Ternaria - Solución correcta (encoding completo)
-  📦 Codificado a base64: 452 caracteres
-  📂 Decodificado: 237 caracteres
-  ✓ Contenido preservado correctamente
-  ✓ PASS - 0 errores detectados (esperados: 0)
+Test 2/8: Ternaria - cardinalidades incorrectas
+  Las cardinalidades de los dos enlaces de la ternaria están cambiadas
+  base64: 452 caracteres, decodificado: 237, contenido preservado
+  ✓ PASS - detectadas las 2 comprobaciones del caso
+  2 errores en total
 ```
 
-**Significado**: El archivo se codificó y decodificó sin pérdida de información.
+Números a observar:
 
-### Números a observar:
-- **Codificado**: ~2x el tamaño original (base64 genera ~33% overhead + URL encoding)
-- **Decodificado**: Debe coincidir EXACTAMENTE con el tamaño original
-- **Preservación**: Debe ser 100% idéntico byte por byte
+- **base64**: alrededor del doble del original, por el `encodeURIComponent`
+  más el propio base64
+- **decodificado**: tiene que coincidir exactamente con el tamaño del fichero
+- **errores en total**: informativo, no forma parte de la condición de éxito
 
-## 🔍 Validación de Contenido
+## Validación de caracteres especiales
 
-El test incluye una validación personalizada para caracteres especiales:
+El caso 8 incluye una comprobación propia, porque la pérdida de acentos no
+produce un error de modelo sino un texto distinto:
 
 ```javascript
 customValidation: (encoded, decoded, original) => {
@@ -124,49 +136,45 @@ customValidation: (encoded, decoded, original) => {
     if (original.includes('ñ') && !decoded.includes('ñ')) {
         errors.push('Se perdió la letra ñ en el encoding/decoding');
     }
-    // ... más validaciones
     return errors;
 }
 ```
 
-## 💡 Valor de estos Tests
+Esto importa porque los enunciados están en español y los modelos usan nombres
+como `Estudiante_Politecnica`, `calificación` o `año`.
 
-1. **Confianza**: Sabemos que el sistema de URLs funciona
-2. **Regresión**: Si cambiamos encode-erd.js o appParametrizable.js, detectamos problemas
-3. **Documentación**: Muestra cómo usar el encoding/decoding correctamente
-4. **Integración Real**: Simula el uso real de la aplicación
+## Relación con los demás tests
 
-## 🔗 Relación con otros Tests
+| Suite | Propósito | Verifica |
+|---|---|---|
+| `test-integration-encoding.js` | Integración | Que el modelo sobrevive al viaje por la URL |
+| `test-ternaria.js` | Validación | Relaciones ternarias y cardinalidades |
+| `test-superheroes.js` | Validación | Entidades débiles, atributos y roles |
+| `test-the-expanse.js` | Validación | Jerarquías y modelos complejos |
 
-| Test Suite | Propósito | Verifica |
-|------------|-----------|----------|
-| `test-integration-encoding.js` | **Integración** | Encoding/Decoding funciona |
-| `test-ternaria.js` | Validación | Lógica de comparación ternaria |
-| `test-superheroes.js` | Validación | Lógica entidades débiles/roles |
-| `test-the-expanse.js` | Validación | Lógica especialización/compleja |
-
-**Juntos** forman una suite completa que verifica:
-- ✅ El encoding/decoding funciona (integración)
-- ✅ La lógica de validación es correcta (unitarios)
-- ✅ El sistema completo funciona end-to-end
-
-## 🎓 Ejemplo de Uso Real
+## Ejemplo del flujo real
 
 ```javascript
-// 1. Usuario guarda un ERD
-const erdContent = fs.readFileSync('mi-solucion.erd', 'utf-8');
+// 1. El profesor guarda la solución esperada
+const erdContent = fs.readFileSync('erd/01 Superheroes/ER 01 Superheroes final.erd', 'utf-8');
 
-// 2. Encode como lo hace encode-erd.js
+// 2. Se codifica, como hace encode-erd.js
 const base64 = Buffer.from(encodeURIComponent(erdContent)).toString('base64');
 
-// 3. Crear URL
-const url = `erd-checker-parametrizable.html?solution=${base64}`;
+// 3. Ese valor es checker_parameter en el ejercicio del campus,
+//    y erd-checker.js monta la URL:
+const url = `erd-checker.html?s=${base64}`;
 
-// 4. El navegador carga y decodifica (appParametrizable.js)
+// 4. El navegador la decodifica, como hace app.js
 const decoded = decodeURIComponent(atob(base64));
 
-// 5. VERIFICACIÓN: ¿son idénticos?
-console.assert(decoded === erdContent, 'Content must match!');
+// 5. Tienen que ser idénticos
+console.assert(decoded === erdContent, 'El contenido debe coincidir');
+
+// 6. Y el MD5 que app.js devuelve al campus sale de ahí
+const md5 = CryptoJS.MD5(decoded.trim()).toString();
 ```
 
-Este test automatiza esta verificación para todos nuestros archivos .erd.
+Ese último paso es el motivo de que cambiar una solución obligue a actualizar
+dos valores en el ejercicio, no uno. Para hacerlo en lote está
+`tools/regen-campus.js`.

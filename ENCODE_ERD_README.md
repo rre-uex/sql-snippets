@@ -1,19 +1,38 @@
 # ERD to Base64 Encoder
 
-Command-line tool to encode ERD files to base64 format for use with `erd-checker-parametrizable.html`.
+Command-line tool to encode ERD files to base64, so a solution can be embedded
+in an exercise of the campus virtual.
 
 ## Quick Start
 
 ```bash
 # Encode an ERD file
-node encode-erd.js "erd/Ternaria correcto.erd"
-
-# Show full URL with localhost:8080
-node encode-erd.js "erd/Ternaria correcto.erd" --url
+node encode-erd.js "erd/Teoria/Ternarias/Ternaria correcto.erd"
 
 # Using npm script
-npm run encode "erd/Ternaria correcto.erd"
+npm run encode "erd/Teoria/Ternarias/Ternaria correcto.erd"
 ```
+
+## Where the encoded solution goes
+
+The checker is embedded in Moodle as a small HTML block. The base64 string is
+the value of `checker_parameter`:
+
+```html
+<p>Statement of the exercise...</p>
+<iframe id="checker" src="" width="100%" height="800" hidden></iframe>
+<script>const checker_parameter = "ZXJkaWFncmFtJTIwTW9kZWwl...";</script>
+<script src="https://i3lab.unex.es/sql-snippets/erd-checker.js"></script>
+```
+
+`erd-checker.js` then builds the iframe URL as
+`erd-checker.html?s=` + `checker_parameter`, and `app.js` reads the `s`
+parameter.
+
+Each exercise also needs the **MD5 of the expected solution** in the answer
+field, because that is what `app.js` posts back to Moodle when the student
+presses Submit. This tool does not compute it; use `tools/regen-campus.js`,
+which produces both values for every `.erd` at once (see below).
 
 ## Usage
 
@@ -23,10 +42,7 @@ npm run encode "erd/Ternaria correcto.erd"
 node encode-erd.js <file.erd>
 ```
 
-This will output:
-- The base64-encoded solution
-- A relative URL ready to use
-- Tips for using the output
+Outputs the base64-encoded solution and the relative URL to test it locally.
 
 ### Options
 
@@ -34,113 +50,82 @@ This will output:
 Shows the full URL with localhost:8080:
 
 ```bash
-node encode-erd.js "erd/Ternaria correcto.erd" --url
+node encode-erd.js "erd/Teoria/Ternarias/Ternaria correcto.erd" --url
 ```
 
 #### `--copy` or `-c`
 Copies the URL to clipboard (macOS only):
 
 ```bash
-node encode-erd.js "erd/Ternaria correcto.erd" --copy
+node encode-erd.js "erd/Teoria/Ternarias/Ternaria correcto.erd" --copy
 ```
 
-You can combine options:
+Options can be combined:
 
 ```bash
-node encode-erd.js "erd/Ternaria correcto.erd" --url --copy
+node encode-erd.js "erd/Teoria/Ternarias/Ternaria correcto.erd" --url --copy
 ```
 
 #### `--help` or `-h`
-Shows help information:
 
 ```bash
 node encode-erd.js --help
 ```
 
-## Examples
-
-### Example 1: Basic Usage
+### Using npm
 
 ```bash
-$ node encode-erd.js "erd/Ternaria correcto.erd"
+npm run encode "erd/Teoria/Ternarias/Ternaria correcto.erd"
 
-╔════════════════════════════════════════════════════════════════════╗
-║              ERD to Base64 Encoder - Results                      ║
-╚════════════════════════════════════════════════════════════════════╝
-
-File: Ternaria correcto.erd
-Size: 237 characters
-
-Base64 Encoded Solution:
-ZXJkaWFncmFtJTIwTW9kZWwlMEFub3RhdGlvbiUzRGNyb3dzZm9vdC...
-
-Relative URL:
-erd-checker-parametrizable.html?solution=ZXJkaWFncmFtJTIwTW9k...
-
-Tip: Copy the URL and open it in your browser to test the solution
-Tip: Use --url flag to see full URL with localhost:8080
-Tip: Use --copy flag to copy URL to clipboard (macOS)
+# With options, note the -- before them
+npm run encode "erd/Teoria/Ternarias/Ternaria correcto.erd" -- --url
 ```
 
-### Example 2: With Full URL
+## Updating many exercises at once
+
+For a single file this tool is enough. To regenerate every exercise after a
+change in the language, use the batch tool instead, which also computes the
+MD5 each exercise needs:
 
 ```bash
-$ node encode-erd.js "erd/Ternaria correcto.erd" --url
-
-...
-Full URL (localhost:8080):
-http://localhost:8080/erd-checker-parametrizable.html?solution=ZXJk...
+node tools/regen-campus.js erd --html campus.html
+open campus.html
 ```
 
-### Example 3: Using npm Script
+That produces a local page listing every `.erd` with a copy button for its
+base64 and for its MD5, plus a checkbox to keep track of which exercises have
+already been updated. It also flags any `.erd` that still contains outdated
+syntax.
 
-```bash
-# Basic
-npm run encode "erd/Ternaria correcto.erd"
+In the campus, replace **only** the string inside the quotes of
+`checker_parameter`. Never paste the whole block: the page content also holds
+the statement of the exercise and you would lose it.
 
-# With options (note the -- before options)
-npm run encode "erd/Ternaria correcto.erd" -- --url
-npm run encode "erd/Ternaria correcto.erd" -- --copy
-```
+## Workflow for a single exercise
 
-## Workflow
-
-1. **Create/edit your ERD file** in the `erd/` directory
-2. **Encode the file** using this tool:
+1. **Create or edit the ERD file** under `erd/`
+2. **Check it with the bigER extension** in VS Code: no errors, diagram renders
+3. **Encode it**:
    ```bash
    node encode-erd.js "erd/my-solution.erd" --url
    ```
-3. **Copy the URL** from the output
-4. **Open the URL** in your browser to test with `erd-checker-parametrizable.html`
-
-## Integration with ERD Checker
-
-The encoded URL can be used directly with the parametrizable ERD checker:
-
-1. Start your local server:
-   ```bash
-   python3 -m http.server 8080
-   ```
-
-2. Encode your ERD:
-   ```bash
-   node encode-erd.js "erd/my-solution.erd" --url
-   ```
-
-3. Open the generated URL in your browser
-
-4. Students can paste their solution and click "Check Solution"
+4. **Open the URL** in the browser to try it as a student would
+5. **Paste the base64** into `checker_parameter` in Moodle and the MD5 into the
+   answer field
 
 ## Technical Details
 
-### Encoding Process
+### Encoding
 
 1. Reads the ERD file content
-2. Applies `encodeURIComponent` to handle special characters
-3. Converts to base64 using Node.js `Buffer`
-4. Generates URL with the encoded solution as query parameter
+2. Applies `encodeURIComponent` to handle accents and special characters
+3. Converts to base64 with Node.js `Buffer`
 
-### Decoding (in appParametrizable.js)
+```javascript
+const base64 = Buffer.from(encodeURIComponent(text)).toString('base64');
+```
+
+### Decoding, in app.js
 
 ```javascript
 function decodeBase64(str) {
@@ -149,26 +134,41 @@ function decodeBase64(str) {
 }
 ```
 
+### The MD5 sent back to Moodle
+
+```javascript
+CryptoJS.MD5(expectedSolutionText.trim())
+```
+
+It is computed on the **decoded and trimmed** text, so it changes whenever the
+`.erd` changes, even by a single space. That is why every change to a solution
+means updating two values in the exercise, not one.
+
 ## Troubleshooting
 
 ### File not found
-Make sure the file path is correct. Use quotes if the filename contains spaces:
+Use quotes if the path contains spaces:
 ```bash
-node encode-erd.js "erd/Ternaria correcto.erd"  # Correct
-node encode-erd.js erd/Ternaria\ correcto.erd   # Also works (escaped space)
+node encode-erd.js "erd/Teoria/Ternarias/Ternaria correcto.erd"   # correct
+node encode-erd.js erd/Teoria/Ternarias/Ternaria\ correcto.erd    # also works
 ```
 
 ### Clipboard not working
-The `--copy` option only works on macOS (uses `pbcopy`). On other systems, manually copy the URL from the output.
+`--copy` uses `pbcopy`, so it only works on macOS. Copy the output manually
+elsewhere.
 
-### URL too long
-Very large ERD files may generate very long URLs. Most browsers support URLs up to ~2000 characters. If you encounter issues, consider simplifying the ERD or using the standard (non-parametrizable) version.
+### The student sees "correct" but Moodle gives no mark
+The base64 was updated but the MD5 was not. Both values must change together.
+
+### A correct solution is reported as wrong
+The exercise is probably still serving a solution written in the previous
+syntax. Regenerate it with `tools/regen-campus.js`.
 
 ## See Also
 
-- [Main README](README.md) - Project overview
+- [Main README](README.md) - Project overview and the bigER notation in use
 - [Test Documentation](tests/README.md) - Running automated tests
-- ERD Checker files:
-  - `erd-checker.html` - Standard version
-  - `erd-checker-parametrizable.html` - Parametrizable version
-  - `appParametrizable.js` - Parametrizable checker logic
+- `erd-checker.html` - the page loaded inside the iframe
+- `erd-checker.js` - the block embedded in Moodle
+- `app.js` - parser, comparison and UI
+- `tools/regen-campus.js` - batch generation of base64 + MD5
