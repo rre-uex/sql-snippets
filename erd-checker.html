@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERD Checker</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="erd-checker.css">
+    
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+<body>
+    <div class="toolbar">
+        <h1>ERD Checker</h1>
+        <div class="toolbar-controls">
+            <button id="checkBtn">Check</button>
+            <button id="submitBtn" disabled hidden>Submit</button>
+        </div>
+    </div>
+    
+    <main>
+     
+        
+        <p class="description">Enter your ERD solution in the text area below using bigER notation.</p>
+                
+        <textarea id="studentSolution" placeholder="entity Student { ... }"></textarea>
+
+        <div id="results"></div>
+
+        <div id="loadStatus"></div>
+        
+    </main>
+    
+    <!-- CodeMirror JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/addon/mode/simple.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/clike/clike.min.js"></script>
+    
+    <script src="app.js"></script>
+</body>
+</html>
