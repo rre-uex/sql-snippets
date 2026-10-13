@@ -3,12 +3,7 @@
   "version": "1.0.0",
   "description": "SQL Snippets with ERD Checker",
   "scripts": {
-    "test": "node tests/test-ternaria.js && node tests/test-superheroes.js && node tests/test-the-expanse.js && node tests/test-integration-encoding.js",
-    "test:ternaria": "node tests/test-ternaria.js",
-    "test:superheroes": "node tests/test-superheroes.js",
-    "test:the-expanse": "node tests/test-the-expanse.js",
-    "test:integration": "node tests/test-integration-encoding.js",
-    "encode": "node encode-erd.js"
+    "start": "python3 -m http.server 8080"
   },
   "keywords": [
     "sql",

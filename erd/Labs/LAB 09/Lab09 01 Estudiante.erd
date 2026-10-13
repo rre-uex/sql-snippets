@@ -1,9 +1,0 @@
-erdiagram Model
-notation=crowsfoot
-
-entity Estudiante {  
-numero_expediente key
-nombre  
-apellido_1  
-apellido_2  
-}

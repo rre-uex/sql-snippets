@@ -1,298 +1,141 @@
 # SQL Snippets with ERD Checker
 
-Interactive web application for SQL learning and Entity-Relationship Diagram (ERD) validation.
+Aplicación web para el aprendizaje de SQL y la validación de diagramas
+Entidad-Relación, usada en la asignatura de Bases de Datos de la Universidad
+de Extremadura.
 
-## Features
+Este repositorio contiene el sitio que se publica en
+`https://i3lab.unex.es/sql-snippets/`.
 
-### 1. SQL Snippets
-Interactive SQL query execution with real-time results visualization.
+## Qué hace
 
-### 2. ERD Checker
-Automated validation tool for Entity-Relationship Diagrams using bigER notation.
+### SQL Snippets
 
-#### Two Versions Available:
+Editor de consultas SQL que se ejecutan en el propio navegador, con SQL.js,
+sobre bases de datos SQLite incluidas en el repositorio. Muestra los
+resultados y puede dibujar el diagrama del esquema de la base de datos.
 
-- **`erd-checker.html`** - Standard version with hardcoded expected solution
-- **`erd-checker-parametrizable.html`** - Parametrizable version that receives the expected solution via URL query parameter
+Se usa desde el Campus Virtual: el bloque de `sqlsnippets.js` se incrusta en
+la pregunta y carga `sql-block.html` dentro de un iframe.
 
-## ERD Checker Usage
+### ERD Checker
 
-### Standard Version
-Open `erd-checker.html` in a browser and enter your ERD solution.
+Comprueba diagramas Entidad-Relación escritos en notación bigER. El alumno
+escribe su modelo, el comprobador lo analiza y le indica en qué se diferencia
+del modelo esperado: entidades, atributos, claves, relaciones, cardinalidades,
+jerarquías y entidades asociativas.
 
-### Parametrizable Version
+Se usa igualmente desde el Campus Virtual, con el bloque de `erd-checker.js`
+cargando `erd-checker.html` en un iframe.
 
-The parametrizable version allows teachers to create custom URLs with the expected solution encoded in base64.
-
-**Using the ERD Encoder Tool:**
-
-The project includes a handy command-line tool to encode ERD files to base64:
-
-```bash
-# Basic usage
-node encode-erd.js "erd/Ternaria correcto.erd"
-
-# With full URL
-node encode-erd.js "erd/Ternaria correcto.erd" --url
-
-# Using npm script
-npm run encode "erd/Ternaria correcto.erd"
-
-# With options
-npm run encode "erd/Ternaria correcto.erd" -- --url
-npm run encode "erd/Ternaria correcto.erd" -- --copy  # macOS only
-```
-
-**Manual Generation:**
-
-**URL Format:**
-```
-erd-checker-parametrizable.html?solution=BASE64_ENCODED_SOLUTION
-```
-
-**Generate URL (Node.js):**
-```javascript
-const fs = require('fs');
-const solution = fs.readFileSync('./erd/your-solution.erd', 'utf8');
-const encoded = Buffer.from(encodeURIComponent(solution)).toString('base64');
-const url = `erd-checker-parametrizable.html?solution=${encoded}`;
-console.log(url);
-```
-
-**Generate URL (Browser Console):**
-```javascript
-const solution = `your ERD solution here`;
-const encoded = btoa(encodeURIComponent(solution));
-const url = `erd-checker-parametrizable.html?solution=${encoded}`;
-console.log(url);
-```
-
-## ERD Validation Features
-
-The checker validates:
-- ✅ Entity definitions (strong/weak/associative)
-- ✅ Entity attributes and keys
-- ✅ Partial keys for weak entities
-- ✅ Unique constraints (`unique` keyword)
-- ✅ Relationships (strong/weak/associative)
-- ✅ Relationship attributes
-- ✅ Cardinalities and roles
-- ✅ Hierarchies: completeness (`total`/`partial`) and constraint (`disjoint`/`overlapping`)
-- ✅ Multi-level hierarchies and several hierarchies over the same base entity
-- ✅ Associative entities and the relationships that identify them
-- ✅ Ternary relationships
-- ✅ Recursive relationships with roles
-
-### How hierarchies and associative relationships are compared
-
-Two elements of the language have names that are **not** shown in the diagram,
-so the checker never compares them by name:
-
-- **Hierarchies** are matched by their base entity and their set of subclasses.
-  A student who writes `hierarchy h_persona` and one who writes
-  `hierarchy jerarquia_personas` describe the same model, so both are accepted.
-- **Associative relationships** are matched by the entities they connect, for
-  the same reason.
-
-Ordinary relationships *are* matched by name, because the name is drawn in the
-diagram and is therefore part of the model.
-
-Comprehensive automated test suites ensure the ERD checker works correctly.
-
-### Run All Tests
-```bash
-npm test
-```
-
-### Run Specific Tests
-```bash
-# Integration tests - encoding/decoding base64 (8 test cases) ⭐ NUEVO
-npm run test:integration
-
-# Ternaria relationship tests (3 test cases)
-npm run test:ternaria
-
-# Superhéroes exercise tests (2 test cases)
-npm run test:superheroes
-
-# The Expanse exercise tests (2 test cases)
-npm run test:the-expanse
-```
-
-### Test Coverage
-
-Tests import `parseERD` and `compareSolutions` directly from `app.js`, so they
-always exercise the code that actually runs in the browser.
-
-#### Integration Tests
-Tests the complete encoding/decoding cycle:
-- ✅ Base64 encoding preserves content exactly
-- ✅ URL decoding works correctly
-- ✅ Special characters (accents, ñ) are preserved
-- ✅ Full ERD validation on top of the decoded content
-
-The error cases do **not** assert an exact error count. Each case declares the
-behaviours it must detect, with the pattern that identifies each one, so a
-reworded message never breaks a test and the test itself documents what it
-covers.
-
-**Total: 8 integration tests**
-
-#### Ternaria Tests
-- ✅ Correct solution validation
-- ✅ Incorrect cardinalities detection
-- ✅ Ternary relationship modelled with two participants instead of three
-
-#### Superhéroes Tests
-- ✅ Correct solution validation
-- ✅ Nine distinct validation behaviours
-  - Missing and redundant attributes
-  - Weak entity marked as strong, and the other way round
-  - Missing and redundant relationships
-  - Wrong cardinalities
-  - Missing relationship attributes
-  - Weak relationship not marked as such
-
-#### The Expanse Tests
-- ✅ Correct solution validation
-- ✅ Eight distinct validation behaviours on the most complex model
-  - Missing and redundant entities
-  - Subclass hanging from the wrong superclass
-  - Missing and redundant hierarchies
-  - Misnamed attributes
-  - Missing links inside a relationship
-  - Missing relationships
-
-### Test Documentation
-- 📄 [tests/README.md](tests/README.md) - General test overview
-- 📄 [tests/README_TESTS.md](tests/README_TESTS.md) - Detailed validation test cases
-- 📄 [tests/README_INTEGRATION_TESTS.md](tests/README_INTEGRATION_TESTS.md) - Integration tests documentation
-- 📄 [tests/INTEGRATION_TESTS_SUMMARY.md](tests/INTEGRATION_TESTS_SUMMARY.md) - Integration tests summary
-
-**Total Test Suite: 15 tests** (8 integration + 7 validation)
-## Project Structure
+## Estructura
 
 ```
 sql-snippets/
-├── app.js                              # ERD checker: parser, comparison and UI
-├── encode-erd.js                       # CLI tool to encode ERD files to base64
-├── erd-checker.html                    # ERD checker page
-├── erd-checker.js                      # Block embedded in the campus (builds the iframe)
-├── index.html                          # Main page
-├── package.json                        # npm scripts and project metadata
-├── db/                                 # SQLite databases
-├── doc/                                # Documentation
-├── legacy/
-│   └── app-old.js                      # Pre-September-2026 checker, kept for reference
-├── tools/
-│   ├── migrate-erd.js                  # Migrates .erd files to the current syntax
-│   └── regen-campus.js                 # Generates the base64 + MD5 pair per exercise
-│   └── regen-_campus_web.js            # Generates the base64 + MD5 pair per exercise on html
-├── erd/                                # ERD exercise files, one folder per domain
-│   ├── 01 Superheroes/
-│   ├── 04 The Expanse Completo/
-│   ├── Labs/
-│   ├── Teoria/
-│   └── ...
-└── tests/                              # Test files
-    ├── test-integration-encoding.js    # Encoding/decoding plus validation
-    ├── test-ternaria.js                # Ternary relationship tests
-    ├── test-superheroes.js             # Superhéroes exercise tests
-    ├── test-the-expanse.js             # The Expanse exercise tests
-    ├── README.md                       # Tests documentation
-    ├── README_TESTS.md                 # Detailed test cases documentation
-    └── README_INTEGRATION_TESTS.md     # Integration tests documentation
+├── index.html           Página principal del editor de SQL
+├── style.css            Estilos
+├── script.js            Lógica del editor: consultas, resultados, esquema
+├── schema.js            Generación del diagrama del esquema
+├── sql-block.html       Página que se carga en el iframe de Moodle
+├── sqlsnippets.js       Bloque que se incrusta en la pregunta de Moodle
+│
+├── erd-checker.html     Página del comprobador, dentro del iframe
+├── erd-checker.css      Estilos del comprobador
+├── app.js               Analizador de diagramas ER y comparación
+├── erd-checker.js       Bloque que se incrusta en la pregunta de Moodle
+│
+├── db/                  Bases de datos SQLite de los ejercicios
+├── images/              Iconos e imágenes
+└── tests/               Pruebas y utilidades de depuración
 ```
 
-## Development
+## Notación bigER
 
-### Prerequisites
-- Modern web browser (Chrome, Firefox, Safari, Edge)
-- Node.js (for running tests)
+El comprobador entiende la notación bigER. Ejemplo de lo que soporta:
 
-### Local Development
-1. Clone the repository
-2. Start a local HTTP server:
-   ```bash
-   python3 -m http.server 8080
-   ```
-3. Open `http://localhost:8080` in your browser
-
-### Running Tests
-```bash
-npm test
 ```
-
-## BigER Notation
-
-The ERD checker uses bigER notation. Example:
-
-```erdiagram
-erdiagram Model
+erdiagram Ejemplo
 notation=crowsfoot
 
-entity Student {
-    student_id key
-    name
-    email unique
+entity Alumno {
+    expediente key
+    nombre
+    correo unique
 }
 
-entity Course {
-    course_id key
-    title
+entity Asignatura {
+    codigo key
+    titulo
 }
 
-relationship enrolledIn {
-    Student[1..N] -> Course[1..N]
-    enrollment_date
+relationship imparte {
+    Profesor[1..1] -> Asignatura[1..N]
 }
 
-weak entity Attendance {
-    session_date partial-key
+weak entity Sesion {
+    fecha partial-key
 }
 
-weak relationship attends {
-    Student[1..1] -> Attendance[0..N]
+weak relationship pertenece_a {
+    Asignatura[1..1] -> Sesion[0..N]
 }
 
-// A hierarchy is a named element of the model. Several hierarchies may share
-// the same base entity, and a subclass may itself be the base of another one.
-hierarchy h_student Student partial overlapping
+hierarchy h_persona Persona total disjoint
 
-entity GraduateStudent extends h_student {
-    student_id key
-    thesis_topic
+entity Alumno extends h_persona {
+    expediente key
 }
 
-entity ExchangeStudent extends h_student {
-    student_id key
-    home_university
+associative entity Matricula {
+    nota
 }
 
-// An associative entity declares no key of its own: it is identified by the
-// entities it associates, which are the ones linked to it by an
-// "associative relationship".
-associative entity Registration {
-    registered_at
-}
-
-associative relationship student_registration {
-    Student[1..1] -> Registration[1..N]
-}
-
-associative relationship course_registration {
-    Course[1..1] -> Registration[1..N]
+associative relationship cursa {
+    Alumno[1..1] -> Matricula[1..N]
 }
 ```
 
-With a single subclass a hierarchy can only be `partial`, since there is
-nothing that could overlap or be disjoint. With two or more subclasses the
-constraint is mandatory.
+Soporta jerarquías con nombre propio, varias jerarquías sobre la misma entidad
+base, jerarquías multinivel, y entidades y relaciones asociativas. Una
+jerarquía con una sola subclase solo admite `partial`; con dos o más, la
+restricción `disjoint` u `overlapping` es obligatoria.
 
-## License
+La extensión de VS Code que usan los alumnos para escribir estos modelos es
+una adaptación del proyecto bigER (https://github.com/borkdominik/bigER).
+
+## Desarrollo
+
+### Requisitos
+
+- Un navegador moderno
+- Python 3 o cualquier servidor estático para el desarrollo local
+
+### En local
+
+```bash
+python3 -m http.server 8080
+```
+
+Y abrir `http://localhost:8080`
+
+### Pruebas
+
+Ver [tests/README.md](tests/README.md).
+
+La batería automática del comprobador ER no está en este repositorio: necesita
+modelos completos como ficheros de prueba, y esos modelos son las soluciones
+de los ejercicios. Vive en el repositorio privado del proyecto, y conviene
+ejecutarla allí antes de traer cambios de `app.js` aquí.
+
+## Despliegue
+
+El sitio son ficheros estáticos: basta con servir el contenido del
+repositorio. No hay nada que compilar.
+
+Las páginas cargan varias bibliotecas desde CDN y no desde este servidor
+(CodeMirror, SQL.js, CryptoJS, Mermaid y Viz.js), así que el navegador del
+alumno necesita acceso a internet, no solo al servidor.
+
+## Licencia
 
 ISC
-
-## Contributing
-
-Contributions are welcome! Please ensure all tests pass before submitting pull requests.
